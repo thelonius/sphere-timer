@@ -1,0 +1,233 @@
+.task-form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-primary);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.task-form {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 40px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 
+    var(--shadow),
+    0 0 60px var(--glow-cyan);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.task-form h3 {
+  font-size: 1.6rem;
+  font-weight: 300;
+  color: var(--text-primary);
+  margin-bottom: 30px;
+}
+
+.form-group {
+  margin-bottom: 30px;
+}
+
+.form-group label {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.task-input {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.task-textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.task-input:focus {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 3px var(--glow-cyan);
+}
+
+.task-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.color-picker {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 12px;
+}
+
+.color-option {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.color-option:hover {
+  transform: scale(1.1);
+}
+
+.color-option.selected {
+  border-color: var(--text-primary);
+  box-shadow: 0 0 20px currentColor;
+}
+
+.color-option.selected::before {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--bg-primary);
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.cancel-button,
+.submit-button {
+  flex: 1;
+  padding: 14px;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancel-button {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.cancel-button:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+.submit-button {
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+  border: none;
+  color: var(--bg-primary);
+  box-shadow: 0 4px 15px var(--glow-cyan);
+}
+
+.submit-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--glow-cyan);
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .task-form {
+    padding: 30px 20px;
+    width: calc(100% - 20px);
+    max-width: none;
+    margin: 10px;
+  }
+
+  .task-form h3 {
+    font-size: 1.4rem;
+    margin-bottom: 25px;
+  }
+
+  .form-group {
+    margin-bottom: 25px;
+  }
+
+  .color-picker {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  .color-option {
+    min-height: 48px;
+    touch-action: manipulation;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .cancel-button,
+  .submit-button {
+    width: 100%;
+    min-height: 48px;
+    touch-action: manipulation;
+  }
+}
+
+@media (max-width: 480px) {
+  .task-form {
+    padding: 25px 15px;
+    border-radius: 12px;
+  }
+
+  .task-form h3 {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    font-size: 0.85rem;
+  }
+
+  .task-input {
+    padding: 12px 14px;
+    font-size: 0.95rem;
+  }
+
+  .color-picker {
+    gap: 8px;
+  }
+
+  .color-option.selected::before {
+    font-size: 1rem;
+  }
+}

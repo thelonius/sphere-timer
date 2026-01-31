@@ -1,0 +1,377 @@
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.login-box {
+  background: var(--bg-tertiary);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 60px 50px;
+  box-shadow: var(--shadow);
+  width: 100%;
+  max-width: 450px;
+  animation: fadeIn 0.6s ease-out;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.language-toggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 16px;
+  color: var(--accent-cyan);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.language-toggle:hover {
+  background: rgba(126, 176, 155, 0.1);
+  border-color: var(--accent-cyan);
+  transform: translateY(-2px);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.logo-container {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.logo-circle {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+  box-shadow: 0 0 40px var(--glow-cyan);
+  animation: pulse 3s ease-in-out infinite;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.logo-circle::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60%;
+  height: 60%;
+  border-radius: 50%;
+  background: var(--bg-primary);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 40px var(--glow-cyan);
+  }
+  50% {
+    box-shadow: 0 0 60px var(--glow-magenta);
+  }
+}
+
+.app-title {
+  font-size: 2.5rem;
+  font-weight: 300;
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 2px;
+  margin: 0;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin-top: 10px;
+  font-weight: 300;
+  letter-spacing: 0.5px;
+}
+
+.login-form {
+  margin-top: 40px;
+}
+
+.input-group {
+  position: relative;
+  margin-bottom: 40px;
+}
+
+.login-input {
+  width: 100%;
+  padding: 15px 0;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.login-input::placeholder {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.login-input:focus {
+  border-bottom-color: var(--accent-cyan);
+}
+
+.login-input:focus + .input-underline {
+  transform: scaleX(1);
+}
+
+.input-underline {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-magenta));
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.login-button {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+  border: none;
+  border-radius: 12px;
+  color: var(--bg-primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease;
+}
+
+.login-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--glow-cyan);
+}
+
+.login-button:active {
+  transform: translateY(0);
+}
+
+.login-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.login-button span {
+  position: relative;
+  z-index: 1;
+}
+
+.button-glow {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.login-button:hover .button-glow {
+  left: 100%;
+}
+
+.error-message {
+  margin-top: 15px;
+  padding: 12px;
+  background: rgba(255, 68, 68, 0.1);
+  border: 1px solid rgba(255, 68, 68, 0.3);
+  border-radius: 8px;
+  color: #ff6b6b;
+  font-size: 0.9rem;
+  text-align: center;
+  animation: shake 0.3s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.auth-switch {
+  margin-top: 25px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.switch-link {
+  background: none;
+  border: none;
+  color: var(--accent-cyan);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  padding: 0;
+  margin-left: 5px;
+}
+
+.switch-link:hover {
+  color: var(--accent-purple);
+  text-decoration: underline;
+}
+
+.switch-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .login-container {
+    padding: 15px;
+  }
+
+  .login-box {
+    padding: 50px 35px;
+    max-width: 100%;
+  }
+
+  .language-toggle {
+    top: 15px;
+    right: 15px;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+
+  .logo-circle {
+    width: 70px;
+    height: 70px;
+  }
+
+  .app-title {
+    font-size: 2rem;
+  }
+
+  .subtitle {
+    font-size: 0.9rem;
+  }
+
+  .login-form {
+    margin-top: 35px;
+  }
+
+  .input-group {
+    margin-bottom: 35px;
+  }
+
+  .login-input {
+    font-size: 0.9rem;
+  }
+
+  .login-button {
+    padding: 14px;
+    font-size: 1rem;
+  }
+
+  .error-message {
+    font-size: 0.85rem;
+  }
+
+  .auth-switch {
+    font-size: 0.9rem;
+  }
+
+  .switch-link {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-container {
+    padding: 10px;
+  }
+
+  .login-box {
+    padding: 40px 25px;
+    border-radius: 16px;
+  }
+
+  .language-toggle {
+    top: 12px;
+    right: 12px;
+    padding: 5px 10px;
+    font-size: 0.75rem;
+  }
+
+  .logo-circle {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 15px;
+  }
+
+  .app-title {
+    font-size: 1.7rem;
+    letter-spacing: 1px;
+  }
+
+  .subtitle {
+    font-size: 0.85rem;
+  }
+
+  .login-form {
+    margin-top: 30px;
+  }
+
+  .input-group {
+    margin-bottom: 30px;
+  }
+
+  .login-input {
+    padding: 12px 0;
+    font-size: 0.85rem;
+  }
+
+  .login-button {
+    padding: 13px;
+    font-size: 0.95rem;
+  }
+
+  .auth-switch {
+    font-size: 0.85rem;
+    margin-top: 20px;
+  }
+
+  .switch-link {
+    font-size: 0.85rem;
+  }
+}
+

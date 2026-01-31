@@ -1,0 +1,67 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .timer-stroke { stroke: rgba(255, 255, 255, 0.5); fill: none; }
+      .timer-fill { fill: rgba(255, 255, 255, 0.5); }
+    </style>
+  </defs>
+  
+  <g stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Кнопка сверху -->
+    <rect x="108" y="16" width="40" height="24" rx="4" ry="4" class="timer-fill"/>
+    <line x1="118" y1="40" x2="118" y2="56" class="timer-stroke"/>
+    <line x1="138" y1="40" x2="138" y2="56" class="timer-stroke"/>
+    
+    <!-- Боковые кнопки -->
+    <g transform="rotate(-30 60 80)">
+      <rect x="40" y="65" width="32" height="16" rx="3" ry="3" class="timer-fill"/>
+    </g>
+    <g transform="rotate(30 196 80)">
+      <rect x="184" y="65" width="32" height="16" rx="3" ry="3" class="timer-fill"/>
+    </g>
+    
+    <!-- Внешний круг -->
+    <circle cx="128" cy="144" r="88" class="timer-stroke" stroke-width="14"/>
+    
+    <!-- Внутренний круг циферблата -->
+    <circle cx="128" cy="144" r="72" class="timer-stroke" stroke-width="8"/>
+    
+    <!-- Метки часов -->
+    <line x1="128" y1="80" x2="128" y2="88" class="timer-stroke"/>
+    <line x1="128" y1="200" x2="128" y2="208" class="timer-stroke"/>
+    <line x1="64" y1="144" x2="72" y2="144" class="timer-stroke"/>
+    <line x1="184" y1="144" x2="192" y2="144" class="timer-stroke"/>
+    
+    <g transform="rotate(30 128 144)">
+      <line x1="128" y1="80" x2="128" y2="86" class="timer-stroke"/>
+    </g>
+    <g transform="rotate(60 128 144)">
+      <line x1="128" y1="80" x2="128" y2="86" class="timer-stroke"/>
+    </g>
+    <g transform="rotate(120 128 144)">
+      <line x1="128" y1="80" x2="128" y2="86" class="timer-stroke"/>
+    </g>
+    <g transform="rotate(150 128 144)">
+      <line x1="128" y1="80" x2="128" y2="86" class="timer-stroke"/>
+    </g>
+    <g transform="rotate(210 128 144)">
+      <line x1="128" y1="80" x2="128" y2="86" class="timer-stroke"/>
+    </g>
+    <g transform="rotate(240 128 144)">
+      <line x1="128" y1="80" x2="128" y2="86" class="timer-stroke"/>
+    </g>
+    <g transform="rotate(300 128 144)">
+      <line x1="128" y1="80" x2="128" y2="86" class="timer-stroke"/>
+    </g>
+    <g transform="rotate(330 128 144)">
+      <line x1="128" y1="80" x2="128" y2="86" class="timer-stroke"/>
+    </g>
+    
+    <!-- Центральный круг -->
+    <circle cx="128" cy="144" r="8" class="timer-fill"/>
+    
+    <!-- Стрелки (3:00) -->
+    <line x1="128" y1="144" x2="128" y2="112" class="timer-stroke" stroke-width="6"/>
+    <line x1="128" y1="144" x2="164" y2="144" class="timer-stroke" stroke-width="8"/>
+  </g>
+</svg>

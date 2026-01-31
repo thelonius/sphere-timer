@@ -1,0 +1,16 @@
+{
+  "name": "sphere-timer",
+  "version": "1.0.0",
+  "description": "SphereTimer - Task Timer Application",
+  "private": true,
+  "scripts": {
+    "install": "cd task-timer-app && npm install",
+    "dev": "cd task-timer-app && npm run dev",
+    "build": "cd task-timer-app && npm run build",
+    "preview": "cd task-timer-app && npm run preview",
+    "lint": "cd task-timer-app && npm run lint"
+  },
+  "keywords": ["timer", "task-management", "react"],
+  "author": "",
+  "license": "MIT"
+}

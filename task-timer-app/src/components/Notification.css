@@ -1,0 +1,118 @@
+.notification {
+  position: fixed;
+  top: 100px;
+  right: 40px;
+  background: rgba(18, 23, 46, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 100, 0, 0.5);
+  border-left: 4px solid #ff6400;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 0 40px rgba(255, 100, 0, 0.2);
+  z-index: 10000;
+  min-width: 300px;
+  max-width: 500px;
+  animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 1;
+  transition: opacity 1s ease-out;
+}
+
+.notification.fade-out {
+  opacity: 0;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.notification-message {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.notification-close {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 1.6rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+  font-weight: 200;
+  line-height: 1;
+  padding: 0;
+  padding-bottom: 2px;
+}
+
+.notification-close:hover {
+  background: rgba(255, 0, 0, 0.1);
+  border-color: #ff4444;
+  color: #ff4444;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .notification {
+    top: 80px;
+    right: 15px;
+    left: 15px;
+    min-width: auto;
+    max-width: none;
+    padding: 14px 16px;
+  }
+
+  .notification-message {
+    font-size: 0.9rem;
+  }
+
+  .notification-close {
+    width: 22px;
+    height: 22px;
+    font-size: 1.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .notification {
+    top: 70px;
+    right: 10px;
+    left: 10px;
+    padding: 12px 14px;
+    border-radius: 10px;
+  }
+
+  .notification-message {
+    font-size: 0.85rem;
+  }
+
+  .notification-close {
+    width: 20px;
+    height: 20px;
+    font-size: 1.3rem;
+  }
+}

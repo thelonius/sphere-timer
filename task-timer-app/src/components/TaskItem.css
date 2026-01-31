@@ -1,0 +1,348 @@
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 24px;
+  background: var(--bg-secondary);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  animation: slideIn 0.4s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.task-item:hover {
+  background: var(--bg-tertiary);
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+}
+
+.task-item.highlighted {
+  background: var(--bg-tertiary);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+.task-item.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.task-item[draggable="true"] {
+  cursor: grab;
+}
+
+.task-color-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.pulse {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: inherit;
+  animation: pulseAnimation 2s ease-in-out infinite;
+}
+
+@keyframes pulseAnimation {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+.task-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.task-name {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.task-time-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.task-time-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.task-time-item .time-label {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  min-width: 70px;
+}
+
+.task-time-item .time-value {
+  font-family: 'Courier New', monospace;
+  font-weight: 400;
+  color: var(--accent-cyan);
+  letter-spacing: 0.5px;
+  font-size: 1rem;
+}
+
+.task-time-item.current-session .time-value {
+  color: var(--accent-magenta);
+  font-weight: 500;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.task-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.timer-button,
+.edit-button,
+.delete-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.timer-button:hover {
+  background: var(--glow-cyan);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  box-shadow: 0 0 15px var(--glow-cyan);
+}
+
+.timer-button.active {
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+  border-color: transparent;
+  color: var(--bg-primary);
+  box-shadow: 0 0 20px var(--glow-cyan);
+}
+
+.edit-button:hover {
+  background: rgba(255, 215, 0, 0.1);
+  border-color: #FFD700;
+  color: #FFD700;
+}
+
+.delete-button {
+  font-size: 1.8rem;
+  font-weight: 300;
+}
+
+.delete-button:hover {
+  background: rgba(255, 0, 0, 0.1);
+  border-color: #ff4444;
+  color: #ff4444;
+}
+
+.delete-confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-primary);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.delete-confirm {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 40px;
+  max-width: 400px;
+  box-shadow: 
+    var(--shadow),
+    0 0 60px rgba(255, 68, 68, 0.2);
+  animation: slideUp 0.3s ease;
+}
+
+.delete-confirm h3 {
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.delete-confirm p {
+  color: var(--text-secondary);
+  margin-bottom: 30px;
+  line-height: 1.6;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.confirm-delete-button {
+  flex: 1;
+  padding: 14px;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #ff4444, #cc3333);
+  border: none;
+  color: white;
+  box-shadow: 0 4px 15px rgba(255, 0, 0, 0.3);
+}
+
+.confirm-delete-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 0, 0, 0.4);
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .task-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 16px 18px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .task-color-indicator {
+    position: absolute;
+    left: 18px;
+    top: 18px;
+  }
+
+  .task-content {
+    width: 100%;
+    padding-left: 24px;
+  }
+
+  .task-name {
+    font-size: 1rem;
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+
+  .task-time-container {
+    gap: 4px;
+  }
+
+  .task-time-item {
+    font-size: 0.85rem;
+  }
+
+  .task-time-item .time-label {
+    min-width: 60px;
+    font-size: 0.8rem;
+  }
+
+  .task-time-item .time-value {
+    font-size: 0.9rem;
+  }
+
+  .task-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .timer-button,
+  .edit-button,
+  .delete-button {
+    flex: 1;
+    height: 48px;
+    min-height: 48px;
+    font-size: 1.1rem;
+    touch-action: manipulation;
+  }
+
+  .delete-confirm {
+    padding: 30px 20px;
+    margin: 0 15px;
+    max-width: calc(100% - 30px);
+  }
+
+  .delete-confirm h3 {
+    font-size: 1.2rem;
+  }
+
+  .confirm-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .confirm-delete-button,
+  .confirm-actions button {
+    min-height: 48px;
+    touch-action: manipulation;
+  }
+}
+
+@media (max-width: 480px) {
+  .task-item {
+    padding: 14px 16px;
+  }
+
+  .task-color-indicator {
+    width: 10px;
+    height: 10px;
+  }
+
+  .task-name {
+    font-size: 0.95rem;
+  }
+
+  .delete-confirm {
+    padding: 25px 15px;
+  }
+}
