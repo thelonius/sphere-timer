@@ -116,6 +116,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
   flex-shrink: 0;
+  color: inherit;
+  border-color: inherit;
+  outline: none;
 }
 
 .task-badge:hover {
@@ -123,9 +126,8 @@
 }
 
 .task-badge.active {
-  background: currentColor;
-  border: 2px solid currentColor;
   color: var(--bg-primary);
+  outline: none;
 }
 
 .calendar-controls {
@@ -295,6 +297,7 @@
   .calendar-content {
     flex-direction: column;
     gap: 15px;
+    min-height: 0;
   }
 
   .task-selector {
@@ -309,6 +312,7 @@
     overflow-y: hidden;
     white-space: nowrap;
     gap: 10px;
+    flex-shrink: 0;
   }
 
   .task-selector::-webkit-scrollbar {
@@ -326,7 +330,8 @@
   }
 
   .calendar-main {
-    max-height: none;
+    flex: 1;
+    min-height: 0;
   }
 
   .calendar-controls h3 {
@@ -360,7 +365,6 @@
     gap: 12px;
     padding: 12px;
     margin-top: 25px;
-    margin-bottom: 60px;
   }
 
   .stat-label {

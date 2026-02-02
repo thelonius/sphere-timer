@@ -32,25 +32,20 @@ body {
   background: var(--bg-primary);
   color: var(--text-primary);
   overflow-x: hidden;
-}
-
+  margin: 0;
+  width: 100%;
+  min-height: 100vh;
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
 #root {
   min-height: 100vh;
-}
-a:hover {
-  color: #535bf2;
+  width: 100%;
 }
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+a:hover {
+  color: #535bf2;
 }
 
 h1 {
@@ -92,10 +87,6 @@ button:focus-visible {
 
 /* Базовая адаптивность */
 @media (max-width: 768px) {
-  body {
-    min-width: 100%;
-  }
-
   h1 {
     font-size: 2.5em;
   }

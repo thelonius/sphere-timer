@@ -5,8 +5,30 @@ import { setItem, getItem, removeItem, STORAGE_KEYS } from '../utils/storageUtil
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     const token = getItem(STORAGE_KEYS.AUTH_TOKEN);
-    const userData = getItem(STORAGE_KEYS.USER_DATA);
-    return (token && userData) ? userData : null;
+    let userData = getItem(STORAGE_KEYS.USER_DATA);
+
+    // If there's no token or userData — no authenticated user
+    if (!token || !userData) return null;
+
+    // If userData is a string (from bad serialization), try to parse it
+    if (typeof userData === 'string') {
+      try {
+        userData = JSON.parse(userData);
+      } catch (parseError) {
+        console.warn('Invalid userData found in localStorage — clearing auth keys.');
+        removeItem(STORAGE_KEYS.AUTH_TOKEN);
+        removeItem(STORAGE_KEYS.USER_DATA);
+        return null;
+      }
+    }
+
+    // Ensure we have an object
+    if (typeof userData === 'object' && userData !== null) return userData;
+
+    // Fallback: clear bad data
+    removeItem(STORAGE_KEYS.AUTH_TOKEN);
+    removeItem(STORAGE_KEYS.USER_DATA);
+    return null;
   });
   const [loading] = useState(false);
 

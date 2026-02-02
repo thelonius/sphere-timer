@@ -1,10 +1,12 @@
 .dashboard {
-  min-height: 100vh;
+  /* Use fixed viewport height and prevent body scrolling; inner main will scroll */
+  height: 100vh;
   display: flex;
   flex-direction: column;
   position: relative;
   z-index: 10;
-}
+  overflow: hidden;
+} 
 
 .calendar-overlay {
   position: fixed;
@@ -23,32 +25,55 @@
 }
 
 .dashboard-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  /* allow header to expand vertically on mobile when content wraps */
+  min-height: var(--header-height, 72px);
+  background: var(--bg-tertiary);
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+  z-index: 100;
+  pointer-events: auto;
+}
+
+.header-inner {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 40px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
-  background: var(--bg-tertiary);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border-color);
-  transition: all 0.3s ease;
-  position: relative;
-  z-index: 10;
+  height: 100%;
+  flex-wrap: wrap; /* allow items to wrap on smaller screens */
+  gap: 8px;
 }
 
+/* Передвинем внутренние блоки, чтобы они использовали высоту хедера */
 .header-left,
 .header-center,
 .header-right {
-  flex: 1;
   display: flex;
   align-items: center;
+  height: 100%;
+}
+
+/* Layout: center grows, left and right keep natural size */
+.header-left {
+  flex: 0 1 auto;
 }
 
 .header-center {
+  flex: 1 1 auto;
   justify-content: center;
   padding: 0 10px;
 }
 
 .header-right {
+  flex: 0 0 auto;
   justify-content: flex-end;
   gap: 10px;
 }
@@ -105,6 +130,7 @@
   transition: all 0.3s ease;
   color: var(--text-secondary);
   font-size: 1.2rem;
+  pointer-events: auto;
 }
 
 
@@ -198,32 +224,64 @@
 
 .dashboard-main {
   flex: 1;
-  padding: 40px;
-  max-width: 1200px;
   width: 100%;
-  margin: 0 auto;
+  max-width: 1200px;
   position: relative;
   z-index: 10;
+  display: flex;
+  gap: 40px;
+  padding-top: calc(var(--header-height, 72px));
+  overflow: hidden;
 }
 
-.tasks-header {
+.task-loader {
+  flex: 0 0 500px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding-left: 40px;
+}
+
+.task-header {
+  flex-shrink: 0;
+  padding: 20px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.tasks-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px 0;
+  -webkit-overflow-scrolling: touch;
+  -ms-overflow-style: none;  /* IE и Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Скрываем скролбар для WebKit браузеров */
+.tasks-scroll::-webkit-scrollbar {
+  display: none;
+} 
+
+.tasks-inner {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
+  gap: 12px;
 }
 
 .tasks-header h2 {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   font-weight: 300;
   color: var(--text-primary);
+  margin: 0;
 }
 
 .create-task-button {
-  padding: 12px 24px;
+  padding: 12px 22px;
   background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   color: var(--bg-primary);
   font-size: 1rem;
   font-weight: 600;
@@ -231,8 +289,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 245, 255, 0.3);
+  transition: all 0.22s ease;
+  box-shadow: 0 6px 30px rgba(16, 185, 195, 0.08); /* softer, wider glow */
+}
+
+.create-task-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(16, 185, 195, 0.12);
 }
 
 .create-task-button:hover {
@@ -247,10 +310,12 @@
 
 /* Адаптивность для планшетов и мобильных устройств */
 @media (max-width: 768px) {
-  .dashboard-header {
-    padding: 15px;
-    flex-wrap: wrap;
-    gap: 10px;
+  :root {
+    --header-height: 64px;
+  }
+
+  .header-inner {
+    padding: 0 20px;
   }
 
   .header-left,
@@ -263,7 +328,7 @@
     order: 1;
     width: 100%;
     justify-content: center;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
   }
 
   .header-center {
@@ -271,6 +336,7 @@
     flex: 1;
     padding: 0;
     min-width: 0;
+    justify-content: center;
   }
 
   .header-right {
@@ -280,9 +346,11 @@
     flex-wrap: nowrap;
   }
 
+  /* Slightly lower project title on mobile */
   .dashboard-title {
     font-size: 1.4rem;
     text-align: center;
+    margin-top: 20px; /* moved down ~20px */
   }
 
   .user-badge {
@@ -312,35 +380,67 @@
     touch-action: manipulation;
   }
 
+  /* Mobile layout: vertical stack */
   .dashboard-main {
-    padding: 20px 15px;
-    padding-bottom: 100px;
+    flex-direction: column;
+    padding: 0;
+    padding-top: calc(var(--header-height, 64px) + 20px);
+    gap: 0;
+    max-width: 100%;
   }
 
-  .tasks-header {
+  .task-loader {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    max-width: 100%;
+    padding-left: 0;
+  }
+
+  .task-header {
+    padding: 12px 16px;
+  }
+
+  .tasks-inner {
+    display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 15px;
-    margin-bottom: 20px;
+    gap: 10px;
   }
 
-  .tasks-header h2 {
+  .tasks-inner h2 {
+    width: 100%;
     font-size: 1.5rem;
     text-align: center;
+    margin: 0;
   }
 
   .create-task-button {
     width: 100%;
     justify-content: center;
-    padding: 14px 20px;
-    min-height: 48px;
+    padding: 14px 18px;
+    min-height: 44px;
     touch-action: manipulation;
+  }
+
+  .tasks-scroll {
+    padding: 12px 16px 32px 16px;
   }
 }
 
+
 @media (max-width: 480px) {
-  .dashboard-header {
-    padding: 12px 15px;
+  :root {
+    --header-height: 56px;
+  }
+
+  .tasks-scroll {
+    max-height: calc(100vh - var(--header-height, 56px) - var(--subheader-height, 0px) - 56px);
+  }
+
+  .header-inner {
+   header-inner {
+    padding: 0 12px;
   }
 
   .dashboard-title {
@@ -353,10 +453,13 @@
   }
 
   .dashboard-main {
-    padding: 15px 10px;
+    padding: 0;
+    padding-top: calc(var(--header-height, 56px) + 16px);
   }
 
-  .tasks-header h2 {
+  .tasks-inner h2 {
     font-size: 1.3rem;
   }
-}
+
+  .create-task-button {
+    padding: 12px 16px

@@ -2,15 +2,24 @@
   display: flex;
   align-items: center;
   gap: 20px;
-  padding: 20px 24px;
-  background: var(--bg-secondary);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--border-color);
-  border-left: 4px solid;
-  border-radius: 12px;
-  transition: all 0.3s ease;
-  animation: slideIn 0.4s ease;
+  padding: 18px 18px;
+  width: 100%;
+  background: linear-gradient(180deg, rgba(24,28,40,0.85), rgba(18,21,30,0.85));
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,0.03);
+  border-left: 6px solid; /* visible color accent */
+  border-radius: 14px;
+  transition: all 0.22s ease;
+  animation: slideIn 0.32s ease;
+  position: relative;
+  z-index: 1; /* keep tasks under fixed headers */
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
 }
+
+.task-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+} 
 
 @keyframes slideIn {
   from {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useLanguage } from '../context/useLanguage';
 import TaskList from './TaskList';
 import TaskForm from './TaskForm';
@@ -10,12 +10,15 @@ import './Dashboard.css';
 
 function Dashboard({ user, onLogout }) {
   const { t, toggleLanguage, language } = useLanguage();
+  const headerRef = useRef(null);
+  const tasksHeaderRef = useRef(null);
   const [tasks, setTasks] = useState(() => loadTasks(user.username));
   const [activeTaskIds, setActiveTaskIds] = useState([]);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [highlightedTaskId, setHighlightedTaskId] = useState(null);
   const [notification, setNotification] = useState(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
     saveTasks(user.username, tasks);
@@ -103,6 +106,43 @@ function Dashboard({ user, onLogout }) {
     };
   }, [activeTasks, updateFavicon, updateTitle]);
 
+  // Update CSS variables with the header and subheader heights so main padding is correct on mobile when they wrap
+  useEffect(() => {
+    const setHeights = () => {
+      if (headerRef.current) {
+        const height = headerRef.current.getBoundingClientRect().height;
+        document.documentElement.style.setProperty('--header-height', `${height}px`);
+      }
+      if (tasksHeaderRef.current) {
+        const sh = tasksHeaderRef.current.getBoundingClientRect().height;
+        document.documentElement.style.setProperty('--subheader-height', `${sh}px`);
+      }
+    };
+
+    setHeights();
+    window.addEventListener('resize', setHeights);
+
+    // Also observe mutations (e.g., when task form opens and increases height)
+    const ro = new ResizeObserver(setHeights);
+    if (headerRef.current) ro.observe(headerRef.current);
+    if (tasksHeaderRef.current) ro.observe(tasksHeaderRef.current);
+
+    return () => {
+      window.removeEventListener('resize', setHeights);
+      ro.disconnect();
+    };
+  }, [user.username, language, showCalendar]);
+
+  // Handle window resize for mobile detection
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const createTask = (taskData) => {
     const newTask = {
       id: Date.now(),
@@ -176,73 +216,90 @@ function Dashboard({ user, onLogout }) {
 
   return (
     <div className="dashboard">
-      <header className="dashboard-header">
-        <div className="header-left">
-          <h1 className="dashboard-title">SphereTimer</h1>
-          {/* <div className="user-badge">
-            <div className="user-avatar">{user.username[0].toUpperCase()}</div>
-            <span className="username">{user.username}</span>
-          </div> */}
-        </div>
-        <div className="header-center">
-          {/* <h1 className="dashboard-title">SphereTimer</h1> */}
-          <div className="user-badge">
-            <div className="user-avatar">{user.username[0].toUpperCase()}</div>
-            <span className="username">{user.username}</span>
+      <header ref={headerRef} className="dashboard-header">
+        <div className="header-inner">
+          <div className="header-left">
+            <h1 className="dashboard-title">SphereTimer</h1>
+            {/* <div className="user-badge">
+              <div className="user-avatar">{user.username[0].toUpperCase()}</div>
+              <span className="username">{user.username}</span>
+            </div> */}
           </div>
-        </div>
-        <div className="header-right">
-          <button 
-            className="icon-button calendar-button"
-            onClick={() => setShowCalendar(!showCalendar)}
-            title={t('calendar')}
-          >
-            <img src="/calendar-icon.svg" alt="Calendar" className="icon-calendar-svg" />
-          </button>
-          <button 
-            className="icon-button language-button"
-            onClick={toggleLanguage}
-            title={t('language')}
-          >
-            <span className="icon-lang">{language === 'ru' ? 'EN' : 'RU'}</span>
-          </button>
-          <button 
-            className="icon-button logout-button"
-            onClick={onLogout}
-            title={t('logout')}
-          >
-            <img src="/logout-icon.svg" alt="Logout" className="icon-logout-svg" />
-          </button>
+          <div className="header-center">
+            {/* <h1 className="dashboard-title">SphereTimer</h1> */}
+            <div className="user-badge">
+              <div className="user-avatar">{user.username[0].toUpperCase()}</div>
+              <span className="username">{user.username}</span>
+            </div>
+          </div>
+          <div className="header-right">
+            <button 
+              className="icon-button calendar-button"
+              onClick={() => setShowCalendar(!showCalendar)}
+              title={t('calendar')}
+            >
+              <img src="/calendar-icon.svg" alt="Calendar" className="icon-calendar-svg" />
+            </button>
+            <button 
+              className="icon-button language-button"
+              onClick={toggleLanguage}
+              title={t('language')}
+            >
+              <span className="icon-lang">{language === 'ru' ? 'EN' : 'RU'}</span>
+            </button>
+            <button 
+              className="icon-button logout-button"
+              onClick={onLogout}
+              title={t('logout')}
+            >
+              <img src="/logout-icon.svg" alt="Logout" className="icon-logout-svg" />
+            </button>
+          </div>
         </div>
       </header>
 
       <main className="dashboard-main">
-        <div className="tasks-header">
-          <h2>{t('myTasks')}</h2>
-          <button 
-            className="create-task-button"
-            onClick={() => setShowTaskForm(true)}
-          >
-            <span>+</span> {t('newTask')}
-          </button>
+        <div className="task-loader">
+          <div ref={tasksHeaderRef} className="task-header">
+            <div className="tasks-inner">
+              <h2>{t('myTasks')}</h2>
+              <button 
+                className="create-task-button"
+                onClick={() => setShowTaskForm(true)}
+              >
+                <span>+</span> {t('newTask')}
+              </button>
+            </div>
+          </div>
+
+          {showTaskForm && (
+            <TaskForm 
+              onSubmit={createTask}
+              onCancel={() => setShowTaskForm(false)}
+            />
+          )}
+
+          <div className="tasks-scroll">
+            <TaskList
+              tasks={tasks}
+              activeTaskIds={activeTaskIds}
+              highlightedTaskId={highlightedTaskId}
+              onToggleTimer={toggleTimer}
+              onDelete={deleteTask}
+              onUpdate={updateTask}
+              onReorder={setTasks}
+            />
+          </div>
         </div>
 
-        {showTaskForm && (
-          <TaskForm 
-            onSubmit={createTask}
-            onCancel={() => setShowTaskForm(false)}
-          />
+        {!isMobile && (
+          <div className="constellations-container">
+            <Constellations 
+              activeTasks={tasks.filter(t => activeTaskIds.includes(t.id))}
+              onTaskClick={(task) => scrollToTask(task.id)}
+            />
+          </div>
         )}
-
-        <TaskList
-          tasks={tasks}
-          activeTaskIds={activeTaskIds}
-          highlightedTaskId={highlightedTaskId}
-          onToggleTimer={toggleTimer}
-          onDelete={deleteTask}
-          onUpdate={updateTask}
-          onReorder={setTasks}
-        />
       </main>
 
       {showCalendar && (
@@ -255,11 +312,6 @@ function Dashboard({ user, onLogout }) {
           </div>
         </div>
       )}
-
-      <Constellations 
-        activeTasks={tasks.filter(t => activeTaskIds.includes(t.id))}
-        onTaskClick={(task) => scrollToTask(task.id)}
-      />
 
       {notification && (
         <Notification 
