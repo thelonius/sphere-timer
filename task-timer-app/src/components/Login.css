@@ -131,6 +131,7 @@
   font-size: 0.95rem;
   outline: none;
   transition: all 0.3s ease;
+  padding: 10px;
 }
 
 .login-input::placeholder {
@@ -356,7 +357,7 @@
   }
 
   .login-input {
-    padding: 12px 0;
+    padding: 12px 10px;
     font-size: 0.85rem;
   }
 
