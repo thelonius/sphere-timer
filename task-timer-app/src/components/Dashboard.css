@@ -439,7 +439,6 @@
   }
 
   .header-inner {
-   header-inner {
     padding: 0 12px;
   }
 
@@ -462,4 +461,6 @@
   }
 
   .create-task-button {
-    padding: 12px 16px
+    padding: 12px 16px;
+  }
+}

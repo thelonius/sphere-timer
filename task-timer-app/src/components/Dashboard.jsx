@@ -41,7 +41,7 @@ function Dashboard({ user, onLogout }) {
     } else {
       // Используем цвет первой активной задачи
       const primaryColor = activeTasks[0].color;
-      const radius = isPulsing ? 26 : 28;
+      const radius = isPulsing ? 30 : 32;
       const glowRadius = isPulsing ? 30 : 32;
       
       // Свечение
@@ -59,11 +59,11 @@ function Dashboard({ user, onLogout }) {
       
       // Если больше одной задачи, добавляем индикатор
       if (activeTasks.length > 1) {
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 20px Arial';
+        ctx.fillStyle = '#050811';
+        ctx.font = 'bold 32px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(activeTasks.length.toString(), 32, 32);
+        ctx.fillText(activeTasks.length.toString(), 32, 34);
       }
     }
     
@@ -202,10 +202,10 @@ function Dashboard({ user, onLogout }) {
       setActiveTaskIds(activeTaskIds.filter(id => id !== taskId));
     } else {
       // Запустить таймер (максимум 3 задачи)
-      if (activeTaskIds.length >= 3) {
-        setNotification(t('maxTasksLimit'));
-        return;
-      }
+      // if (activeTaskIds.length >= 3) {
+      //   setNotification(t('maxTasksLimit'));
+      //   return;
+      // }
       
       setTasks(tasks.map(t => 
         t.id === taskId ? { ...t, startTime: Date.now() } : t

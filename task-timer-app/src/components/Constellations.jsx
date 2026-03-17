@@ -380,16 +380,23 @@ function Constellations({ activeTasks = [], onTaskClick }) {
     
     // Сортируем по расстоянию и берем топ-20 самых подходящих по цвету
     const topStars = starsWithDistance
+      .filter(s => Number.isFinite(s.distance))
       .sort((a, b) => a.distance - b.distance)
       .slice(0, 20);
+
+    if (topStars.length === 0) {
+    // fallback — центр круга
+    return { x: 45, y: 45 };
+  }
     
     // Выбираем СЛУЧАЙНУЮ звезду из топ-20 близких по цвету
     // Используем цвет задачи как seed для генерации псевдослучайного числа
-    const seed = taskColor.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) + taskIndex;
-    const randomIndex = Math.floor((Math.sin(seed) * 10000) % topStars.length);
-    const selectedStar = topStars[Math.abs(randomIndex)];
+    const seed = taskColor.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) + (taskIndex ?? 0);
+    const randomBase = Math.abs(Math.sin(seed) * 10000);
+    const randomIndex = Math.floor(randomBase % topStars.length);
+    const selectedStar = topStars[randomIndex] || topStars[0];
     
-    return { x: selectedStar.x, y: selectedStar.y };
+    return { x: selectedStar.x ?? 45, y: selectedStar.y ?? 45 };
   };
   
   return (
