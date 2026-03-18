@@ -1,9 +1,12 @@
 // Конфигурация API
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+console.log('Current API URL:', API_URL);
+
+import { getItem, removeItem, STORAGE_KEYS } from '../utils/storageUtils';
 
 // Получение токена из localStorage
 const getAuthToken = () => {
-  return localStorage.getItem('authToken');
+  return getItem(STORAGE_KEYS.AUTH_TOKEN);
 };
 
 // Базовый fetch с обработкой ошибок
@@ -22,23 +25,32 @@ const fetchWithAuth = async (endpoint, options = {}) => {
   try {
     const response = await fetch(`${API_URL}${endpoint}`, config);
     
-    // Если токен истек или невалиден
-    if (response.status === 401) {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userData');
+    // Если токен истек или невалиден (и это не попытка входа)
+    if (response.status === 401 && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/register')) {
+      removeItem(STORAGE_KEYS.AUTH_TOKEN);
+      removeItem(STORAGE_KEYS.USER_DATA);
       window.location.reload();
       return;
     }
 
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch (e) {
+      data = {};
+    }
     
     if (!response.ok) {
-      throw new Error(data.message || 'Ошибка запроса');
+      const errorMsg = data.message || data.detail || `Error ${response.status}: ${response.statusText}`;
+      throw new Error(errorMsg);
     }
     
     return data;
   } catch (error) {
     console.error('API Error:', error);
+    if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+      throw new Error('Could not connect to server. Check your network or firewall.');
+    }
     throw error;
   }
 };

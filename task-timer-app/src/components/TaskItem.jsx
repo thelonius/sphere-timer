@@ -20,10 +20,14 @@ function TaskItem({ task, isActive, isHighlighted, currentTime, onToggleTimer, o
     const todayHistory = task.history?.filter(h => h.date === today) || [];
     const historyTime = todayHistory.reduce((sum, h) => sum + h.time, 0);
     
-    if (isActive) {
-      const startDate = new Date(task.startTime).toISOString().split('T')[0];
-      if (startDate === today) {
-        return historyTime + (currentTime - task.startTime);
+    if (isActive && task.startTime) {
+      try {
+        const startDate = new Date(task.startTime).toISOString().split('T')[0];
+        if (startDate === today) {
+          return historyTime + (currentTime - task.startTime);
+        }
+      } catch (e) {
+        console.error('Invalid startTime:', task.startTime);
       }
     }
     

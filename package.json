@@ -8,7 +8,10 @@
     "dev": "cd task-timer-app && npm run dev",
     "build": "cd task-timer-app && npm run build",
     "preview": "cd task-timer-app && npm run preview",
-    "lint": "cd task-timer-app && npm run lint"
+    "lint": "cd task-timer-app && npm run lint",
+    "backend:up": "cd backend && docker compose up --build -d",
+    "backend:down": "cd backend && docker compose down",
+    "backend:test": "cd backend && ./.venv/bin/python3 -m pytest tests/ -v"
   },
   "keywords": ["timer", "task-management", "react"],
   "author": "",
