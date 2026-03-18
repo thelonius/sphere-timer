@@ -92,7 +92,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+  background: var(--accent-cyan);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -109,10 +109,7 @@
 .dashboard-title {
   font-size: 1.8rem;
   font-weight: 300;
-  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--accent-cyan);
   letter-spacing: 1px;
   margin: 0;
 }
@@ -133,6 +130,16 @@
   pointer-events: auto;
 }
 
+
+.icon-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 245, 255, 0.4);
+}
+
+.icon-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-cyan);
+}
 
 .icon-button:hover {
   background: rgba(0, 245, 255, 0.1);
@@ -156,10 +163,7 @@
 
 .icon-button.indicator-button .icon-sphere {
   font-size: 1rem;
-  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--accent-cyan);
 }
 
 .icon-button.indicator-button:hover .icon-sphere {
@@ -182,10 +186,7 @@
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.5px;
-  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--accent-cyan);
 }
 
 .icon-button.language-button:hover .icon-lang {
@@ -279,7 +280,7 @@
 
 .create-task-button {
   padding: 12px 22px;
-  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+  background: var(--accent-cyan);
   border: none;
   border-radius: 12px;
   color: var(--bg-primary);

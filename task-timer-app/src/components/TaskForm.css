@@ -151,7 +151,7 @@
 }
 
 .submit-button {
-  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+  background: var(--accent-cyan);
   border: none;
   color: var(--bg-primary);
   box-shadow: 0 4px 15px var(--glow-cyan);

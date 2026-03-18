@@ -44,12 +44,8 @@ function Dashboard({ user, onLogout }) {
       const radius = isPulsing ? 30 : 32;
       const glowRadius = isPulsing ? 30 : 32;
       
-      // Свечение
-      const gradient = ctx.createRadialGradient(32, 32, radius, 32, 32, glowRadius);
-      gradient.addColorStop(0, primaryColor);
-      gradient.addColorStop(1, primaryColor + '00');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, 64, 64);
+      // Очищаем канвас перед рисованием
+      ctx.clearRect(0, 0, 64, 64);
       
       // Основной круг
       ctx.fillStyle = primaryColor;
@@ -58,7 +54,7 @@ function Dashboard({ user, onLogout }) {
       ctx.fill();
       
       // Если больше одной задачи, добавляем индикатор
-      if (activeTasks.length > 1) {
+      if (activeTasks.length >= 1) {
         ctx.fillStyle = '#050811';
         ctx.font = 'bold 32px Arial';
         ctx.textAlign = 'center';

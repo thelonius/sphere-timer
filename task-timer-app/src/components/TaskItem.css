@@ -4,7 +4,7 @@
   gap: 20px;
   padding: 18px 18px;
   width: 100%;
-  background: linear-gradient(180deg, rgba(24,28,40,0.85), rgba(18,21,30,0.85));
+  background: rgba(24, 28, 40, 0.95);
   backdrop-filter: blur(6px);
   border: 1px solid rgba(255,255,255,0.03);
   border-left: 6px solid; /* visible color accent */
@@ -159,6 +159,7 @@
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+  padding: 0;
 }
 
 .timer-button:hover {
@@ -169,7 +170,7 @@
 }
 
 .timer-button.active {
-  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+  background: var(--accent-cyan);
   border-color: transparent;
   color: var(--bg-primary);
   box-shadow: 0 0 20px var(--glow-cyan);
@@ -182,8 +183,28 @@
 }
 
 .delete-button {
-  font-size: 1.8rem;
-  font-weight: 300;
+  position: relative;
+  overflow: hidden;
+}
+
+.delete-button::before,
+.delete-button::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 2px;
+  background-color: currentColor;
+  border-radius: 2px;
+}
+
+.delete-button::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.delete-button::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 .delete-button:hover {
@@ -245,7 +266,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  background: linear-gradient(135deg, #ff4444, #cc3333);
+  background: #ff4444;
   border: none;
   color: white;
   box-shadow: 0 4px 15px rgba(255, 0, 0, 0.3);

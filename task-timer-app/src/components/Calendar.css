@@ -42,19 +42,43 @@
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   color: var(--text-secondary);
-  font-size: 2.2rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  font-weight: 200;
-  line-height: 1;
-  padding: 0;
-  padding-bottom: 2px;
   z-index: 1001;
   position: relative;
   pointer-events: auto;
+  overflow: hidden;
+}
+
+.close-button::before,
+.close-button::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 2px;
+  background-color: currentColor;
+  border-radius: 2px;
+}
+
+.close-button::before {
+  transform: rotate(45deg);
+}
+
+.close-button::after {
+  transform: rotate(-45deg);
+}
+
+.close-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 68, 68, 0.4);
+}
+
+.close-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px #ff4444;
 }
 
 .close-button:hover {
@@ -158,6 +182,16 @@
   justify-content: center;
   padding: 0;
   line-height: 0;
+}
+
+.month-nav:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 245, 255, 0.4);
+}
+
+.month-nav:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-cyan);
 }
 
 .month-nav:hover {

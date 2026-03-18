@@ -79,7 +79,7 @@ function Calendar({ tasks, onClose }) {
     <div className="calendar-container">
       <div className="calendar-header">
         <h2>{t('timeStatistics')}</h2>
-        <button className="close-button" onClick={onClose}>×</button>
+        <button className="close-button" onClick={onClose}></button>
       </div>
 
       <div className="calendar-content">

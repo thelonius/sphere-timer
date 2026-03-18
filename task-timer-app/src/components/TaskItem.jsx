@@ -100,7 +100,6 @@ function TaskItem({ task, isActive, isHighlighted, currentTime, onToggleTimer, o
             onClick={() => setShowDeleteConfirm(true)}
             title="Удалить"
           >
-            ×
           </button>
         </div>
       </div>
