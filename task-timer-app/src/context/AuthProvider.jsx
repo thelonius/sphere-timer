@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AuthContext } from './authContext';
 import { setItem, getItem, removeItem, STORAGE_KEYS } from '../utils/storageUtils';
+import { authAPI } from '../services/api';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
@@ -34,19 +35,8 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (username, email, password) => {
     try {
-      // Готово для подключения к API
-      // import { authAPI } from '../services/api';
-      // const data = await authAPI.register(username, email, password);
-      // const { user: userData, token } = data;
-      
-      // Временная реализация (без бэкенда)
-      const userData = {
-        id: Date.now(),
-        username,
-        email,
-        createdAt: new Date().toISOString()
-      };
-      const token = 'temp_token_' + Date.now();
+      const data = await authAPI.register(username, email, password);
+      const { user: userData, token } = data.data;
       
       setItem(STORAGE_KEYS.AUTH_TOKEN, token);
       setItem(STORAGE_KEYS.USER_DATA, userData);
@@ -60,36 +50,8 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      // Готово для подключения к API
-      // import { authAPI } from '../services/api';
-      // const data = await authAPI.login(email, password);
-      // const { user: userData, token } = data;
-      
-      // Тестовый аккаунт
-      if (email === 'test@gmail.com' && password === '123456') {
-        const userData = {
-          id: 1,
-          username: 'TestTestTestTestTest',
-          email: 'test@gmail.com',
-          loginDate: new Date().toISOString()
-        };
-        const token = 'test_token_' + Date.now();
-        
-        setItem(STORAGE_KEYS.AUTH_TOKEN, token);
-        setItem(STORAGE_KEYS.USER_DATA, userData);
-        setUser(userData);
-        
-        return { success: true, user: userData };
-      }
-      
-      // Временная реализация (без бэкенда)
-      const userData = {
-        id: Date.now(),
-        username: email.split('@')[0],
-        email,
-        loginDate: new Date().toISOString()
-      };
-      const token = 'temp_token_' + Date.now();
+      const data = await authAPI.login(email, password);
+      const { user: userData, token } = data.data;
       
       setItem(STORAGE_KEYS.AUTH_TOKEN, token);
       setItem(STORAGE_KEYS.USER_DATA, userData);
@@ -101,7 +63,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await authAPI.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
     removeItem(STORAGE_KEYS.AUTH_TOKEN);
     removeItem(STORAGE_KEYS.USER_DATA);
     removeItem('sphereTimerTasks');

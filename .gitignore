@@ -1,0 +1,25 @@
+# Node
+node_modules/
+dist/
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+.env
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Docker
+.docker_data/
+postgres_data/
+redis_data/
+
+# IDE
+.vscode/
+.idea/
+*.swp

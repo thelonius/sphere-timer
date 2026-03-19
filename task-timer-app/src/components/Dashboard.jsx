@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import useSync from '../hooks/useSync';
 import { useLanguage } from '../context/useLanguage';
 import TaskList from './TaskList';
 import TaskForm from './TaskForm';
@@ -6,13 +7,15 @@ import Calendar from './Calendar';
 import Constellations from './Constellations';
 import Notification from './Notification';
 import { saveTasks, loadTasks } from '../utils/storageUtils';
+import { tasksAPI } from '../services/api';
 import './Dashboard.css';
 
 function Dashboard({ user, onLogout }) {
   const { t, toggleLanguage, language } = useLanguage();
   const headerRef = useRef(null);
   const tasksHeaderRef = useRef(null);
-  const [tasks, setTasks] = useState(() => loadTasks(user.username));
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeTaskIds, setActiveTaskIds] = useState([]);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -20,10 +23,76 @@ function Dashboard({ user, onLogout }) {
   const [pulsingTaskIds, setPulsingTaskIds] = useState([]);
   const [notification, setNotification] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [currentTime, setCurrentTime] = useState(Date.now());
+  const [syncStatus, setSyncStatus] = useState('connecting');
+
+  const fetchTasks = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await tasksAPI.getTasks();
+      if (response.success) {
+        setTasks(response.data);
+        const active = response.data.filter(t => t.isActive).map(t => t.id);
+        setActiveTaskIds(active);
+      }
+    } catch (error) {
+      setNotification(error.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleSyncEvent = useCallback((event) => {
+    console.log('Sync event received:', event);
+    
+    if (event.type === 'CONNECTED') {
+      setSyncStatus('connected');
+      fetchTasks();
+      return;
+    }
+
+    const { type, data } = event;
+    
+    switch (type) {
+      case 'TASK_STARTED':
+        setTasks(prev => prev.map(t => 
+          t.id === data.id ? { ...t, ...data } : { ...t, isActive: false, startTime: null }
+        ));
+        setActiveTaskIds([data.id]);
+        break;
+      
+      case 'TASK_STOPPED':
+        setTasks(prev => prev.map(t => t.id === data.id ? { ...t, ...data } : t));
+        setActiveTaskIds(prev => prev.filter(id => id !== data.id));
+        break;
+      
+      case 'TASK_CREATED':
+        setTasks(prev => {
+          if (prev.some(t => t.id === data.id)) return prev;
+          return [...prev, data].sort((a, b) => a.orderIndex - b.orderIndex);
+        });
+        break;
+      
+      case 'TASK_UPDATED':
+        setTasks(prev => prev.map(t => t.id === data.id ? { ...t, ...data } : t)
+          .sort((a, b) => a.orderIndex - b.orderIndex));
+        break;
+      
+      case 'TASK_DELETED':
+        setTasks(prev => prev.filter(t => t.id !== data.id));
+        setActiveTaskIds(prev => prev.filter(id => id !== data.id));
+        break;
+      
+      default:
+        break;
+    }
+  }, [fetchTasks]);
+
+  useSync(handleSyncEvent);
 
   useEffect(() => {
-    saveTasks(user.username, tasks);
-  }, [tasks, user.username]);
+    fetchTasks();
+  }, [fetchTasks]);
 
   const updateFavicon = useCallback((activeTasks, isPulsingBall = false) => {
     const canvas = document.createElement('canvas');
@@ -172,16 +241,16 @@ function Dashboard({ user, onLogout }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const createTask = (taskData) => {
-    const newTask = {
-      id: Date.now(),
-      ...taskData,
-      totalTime: 0,
-      history: [],
-      createdAt: new Date().toISOString(),
-    };
-    setTasks([...tasks, newTask]);
-    setShowTaskForm(false);
+  const createTask = async (taskData) => {
+    try {
+      const response = await tasksAPI.createTask(taskData);
+      if (response.success) {
+        setTasks([...tasks, response.data]);
+        setShowTaskForm(false);
+      }
+    } catch (error) {
+      setNotification(error.message);
+    }
   };
 
   const scrollToTask = (taskId) => {
@@ -193,17 +262,31 @@ function Dashboard({ user, onLogout }) {
     }
   };
 
-  const deleteTask = (taskId) => {
-    if (activeTaskIds.includes(taskId)) {
-      setActiveTaskIds(activeTaskIds.filter(id => id !== taskId));
+  const deleteTask = async (taskId) => {
+    try {
+      const response = await tasksAPI.deleteTask(taskId);
+      if (response.success) {
+        if (activeTaskIds.includes(taskId)) {
+          setActiveTaskIds(activeTaskIds.filter(id => id !== taskId));
+        }
+        setTasks(tasks.filter(task => task.id !== taskId));
+      }
+    } catch (error) {
+      setNotification(error.message);
     }
-    setTasks(tasks.filter(task => task.id !== taskId));
   };
 
-  const updateTask = (taskId, updates) => {
-    setTasks(tasks.map(task => 
-      task.id === taskId ? { ...task, ...updates } : task
-    ));
+  const updateTask = async (taskId, updates) => {
+    try {
+      const response = await tasksAPI.updateTask(taskId, updates);
+      if (response.success) {
+        setTasks(tasks.map(task => 
+          task.id === taskId ? response.data : task
+        ));
+      }
+    } catch (error) {
+      setNotification(error.message);
+    }
   };
 
   const toggleTimer = (taskId) => {
@@ -234,17 +317,19 @@ function Dashboard({ user, onLogout }) {
       
       setTasks(tasks.map(t => t.id === taskId ? updatedTask : t));
       setActiveTaskIds(activeTaskIds.filter(id => id !== taskId));
-    } else {
-      // Запустить таймер (максимум 3 задачи)
-      // if (activeTaskIds.length >= 3) {
-      //   setNotification(t('maxTasksLimit'));
-      //   return;
-      // }
       
-      setTasks(tasks.map(t => 
+      // Записываем локально в сторадж чтобы не терять до синхронизации бэка
+      saveTasks(user?.username || 'default', tasks.map(t => t.id === taskId ? updatedTask : t));
+    } else {
+      // Запустить таймер
+      const updatedTasks = tasks.map(t => 
         t.id === taskId ? { ...t, startTime: Date.now() } : t
-      ));
+      );
+      setTasks(updatedTasks);
       setActiveTaskIds([...activeTaskIds, taskId]);
+      
+      // Записываем локально в сторадж чтобы не терять до синхронизации бэка
+      saveTasks(user?.username || 'default', updatedTasks);
     }
   };
 
