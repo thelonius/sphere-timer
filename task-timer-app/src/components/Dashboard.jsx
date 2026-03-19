@@ -17,6 +17,7 @@ function Dashboard({ user, onLogout }) {
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [highlightedTaskId, setHighlightedTaskId] = useState(null);
+  const [pulsingTaskIds, setPulsingTaskIds] = useState([]);
   const [notification, setNotification] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
@@ -24,42 +25,56 @@ function Dashboard({ user, onLogout }) {
     saveTasks(user.username, tasks);
   }, [tasks, user.username]);
 
-  const updateFavicon = useCallback((activeTasks, isPulsing = false) => {
+  const updateFavicon = useCallback((activeTasks, isPulsingBall = false) => {
     const canvas = document.createElement('canvas');
     canvas.width = 64;
     canvas.height = 64;
     const ctx = canvas.getContext('2d');
     
-    if (activeTasks.length === 0) {
-      // Нет активных задач - стандартная иконка
+    ctx.clearRect(0, 0, 64, 64);
+    
+    if (activeTasks.length === 0 && !isPulsingBall) {
+      // 1. Стандартная иконка (без задач)
       ctx.fillStyle = '#0a0e27';
-      ctx.fillRect(0, 0, 64, 64);
-      ctx.strokeStyle = '#00F5FF';
-      ctx.lineWidth = 2;
-      ctx.arc(32, 32, 24, 0, Math.PI * 2);
+      ctx.fillRect(8, 8, 48, 48); // Небольшой темный фон внутри кольца
+      ctx.strokeStyle = '#00f5ff';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(32, 32, 28, 0, Math.PI * 2);
       ctx.stroke();
     } else {
-      // Используем цвет первой активной задачи
-      const primaryColor = activeTasks[0].color;
-      const radius = isPulsing ? 30 : 32;
-      const glowRadius = isPulsing ? 30 : 32;
+      // Цвет фона - цвет первой задачи в списке
+      const bgColor = activeTasks.length > 0 ? activeTasks[0].color : '#00f5ff';
       
-      // Очищаем канвас перед рисованием
-      ctx.clearRect(0, 0, 64, 64);
-      
-      // Основной круг
-      ctx.fillStyle = primaryColor;
+      // 2. Отрисовываем цветной фон
+      ctx.fillStyle = bgColor;
       ctx.beginPath();
-      ctx.arc(32, 32, radius, 0, Math.PI * 2);
+      ctx.arc(32, 32, 32, 0, Math.PI * 2);
       ctx.fill();
       
-      // Если больше одной задачи, добавляем индикатор
-      if (activeTasks.length >= 1) {
-        ctx.fillStyle = '#050811';
-        ctx.font = 'bold 32px Arial';
+      if (isPulsingBall) {
+        // 3. Режим алертов: пульсирующий черный шар
+        const innerRadius = isPulsingBall ? 20 : 25; // Здесь isPulsingBall - это флаг, мы можем менять радиус в интервале
+        // На самом деле, для простоты будем использовать константу или переданный флаг
+        const r = 24 + Math.sin(Date.now() / 150) * 4; // Плавная анимация если бы мы вызывали чаще, но у нас setInterval.
+        // Используем фиксированные шаги из setInterval
+        const pulseR = 22; 
+        
+        const gradient = ctx.createRadialGradient(32, 32, 2, 32, 32, pulseR);
+        gradient.addColorStop(0, '#1a1f35');
+        gradient.addColorStop(1, '#050811');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(32, 32, pulseR, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        // 4. Режим работы: число задач
+        ctx.fillStyle = '#050811'; // Темный цвет приложения
+        ctx.font = 'bold 44px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(activeTasks.length.toString(), 32, 34);
+        ctx.fillText(activeTasks.length.toString(), 32, 35);
       }
     }
     
@@ -69,8 +84,10 @@ function Dashboard({ user, onLogout }) {
     document.head.appendChild(link);
   }, []);
 
-  const updateTitle = useCallback((activeTasks) => {
-    if (activeTasks.length === 0) {
+  const updateTitle = useCallback((activeTasks, pulsingTasks = []) => {
+    if (pulsingTasks.length > 0) {
+      document.title = pulsingTasks[0].name;
+    } else if (activeTasks.length === 0) {
       document.title = 'SphereTimer';
     } else {
       const names = activeTasks.map(t => t.name).join(' • ');
@@ -84,23 +101,39 @@ function Dashboard({ user, onLogout }) {
   );
 
   useEffect(() => {
+    const isRedAlert = pulsingTaskIds.length > 0;
+    const pulsingTasks = tasks.filter(t => pulsingTaskIds.includes(t.id));
+    
     updateFavicon(activeTasks);
     updateTitle(activeTasks);
     
-    // Пульсация favicon для активных задач
+    // Пульсация favicon для активных задач или алертов
     let pulseInterval;
-    if (activeTasks.length > 0) {
-      let isPulsing = false;
+    if (activeTasks.length > 0 || isRedAlert) {
+      let isPulseOn = false;
       pulseInterval = setInterval(() => {
-        isPulsing = !isPulsing;
-        updateFavicon(activeTasks, isPulsing);
-      }, 1500);
+        isPulseOn = !isPulseOn;
+        if (isRedAlert && pulsingTasks.length > 0) {
+          // Специальная пульсация для стопа: черный шар на цветном фоне
+          updateFavicon(pulsingTasks, isPulseOn);
+          if (isPulseOn) {
+            updateTitle([], pulsingTasks);
+          } else {
+            updateTitle(activeTasks);
+          }
+        } else {
+          // Обычный режим: просто обновляем, если нужно мигать иконкой (например)
+          // Но по условию нам нужно просто число, которое не мигает, или мигает?
+          // "число запущеных задач отражается вместо фавикона"
+          updateFavicon(activeTasks, false);
+        }
+      }, isRedAlert ? 700 : 3000);
     }
     
     return () => {
       if (pulseInterval) clearInterval(pulseInterval);
     };
-  }, [activeTasks, updateFavicon, updateTitle]);
+  }, [activeTasks, pulsingTaskIds, tasks, updateFavicon, updateTitle]);
 
   // Update CSS variables with the header and subheader heights so main padding is correct on mobile when they wrap
   useEffect(() => {
@@ -174,6 +207,11 @@ function Dashboard({ user, onLogout }) {
   };
 
   const toggleTimer = (taskId) => {
+    // Если задача пульсирует, то нажатие на нее (в любом месте, но тут через toggle) останавливает пульсацию
+    if (pulsingTaskIds.includes(taskId)) {
+      setPulsingTaskIds(pulsingTaskIds.filter(id => id !== taskId));
+    }
+
     if (activeTaskIds.includes(taskId)) {
       // Остановить таймер
       const task = tasks.find(t => t.id === taskId);
@@ -207,6 +245,16 @@ function Dashboard({ user, onLogout }) {
         t.id === taskId ? { ...t, startTime: Date.now() } : t
       ));
       setActiveTaskIds([...activeTaskIds, taskId]);
+    }
+  };
+
+  const setTaskPulsing = (taskId, isPulsing) => {
+    if (isPulsing) {
+      if (!pulsingTaskIds.includes(taskId)) {
+        setPulsingTaskIds(prev => [...prev, taskId]);
+      }
+    } else {
+      setPulsingTaskIds(prev => prev.filter(id => id !== taskId));
     }
   };
 
@@ -279,11 +327,13 @@ function Dashboard({ user, onLogout }) {
             <TaskList
               tasks={tasks}
               activeTaskIds={activeTaskIds}
+              pulsingTaskIds={pulsingTaskIds}
               highlightedTaskId={highlightedTaskId}
               onToggleTimer={toggleTimer}
               onDelete={deleteTask}
               onUpdate={updateTask}
               onReorder={setTasks}
+              onSetPulsing={setTaskPulsing}
             />
           </div>
         </div>

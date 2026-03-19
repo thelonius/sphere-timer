@@ -277,84 +277,341 @@
   box-shadow: 0 6px 20px rgba(255, 0, 0, 0.4);
 }
 
+/* Скрытие стрелочек в input type="number" */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+input[type=number] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.task-item.stop-pulsing {
+  border: 4px solid #ff4444 !important;
+  animation: taskPulseRed 1.5s infinite;
+  box-shadow: 0 0 40px rgba(255, 68, 68, 0.6);
+}
+
+.task-item.popover-open {
+  z-index: 50;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+}
+
+@keyframes taskPulseRed {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7);
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  70% {
+    box-shadow: 0 0 0 20px rgba(255, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 68, 68, 0);
+    transform: scale(1);
+  }
+}
+
+.task-time-item.scheduled-stop .time-value {
+  color: #ff4444;
+  font-weight: bold;
+}
+
+.stop-input-wrapper {
+  position: relative;
+}
+
+.stop-input-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.stop-input-field {
+  position: relative; /* Not absolute anymore if in centered overlay */
+  background: rgba(15, 20, 35, 0.98);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--accent-cyan);
+  padding: 20px 25px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  z-index: 9999;
+  box-shadow: 
+    0 25px 50px rgba(0,0,0,0.8),
+    0 0 20px rgba(0, 245, 255, 0.15);
+  animation: slideInModal 0.3s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+  width: 90%;
+  max-width: 410px;
+}
+
+@keyframes slideInModal {
+  from { opacity: 0; transform: scale(0.9) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.stop-input-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  opacity: 0.9;
+}
+
+.stop-inputs-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.stop-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.stop-unit input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--accent-cyan);
+  padding: 10px 5px;
+  border-radius: 8px;
+  text-align: center;
+  font-family: 'Courier New', monospace;
+  font-size: 1.2rem;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.stop-unit input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 10px rgba(0, 245, 255, 0.2);
+}
+
+.stop-unit label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.stop-actions-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.confirm-stop-btn {
+  flex: 2;
+  background: var(--accent-cyan);
+  color: #050811;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+}
+
+.confirm-stop-btn:hover {
+  background: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 0 20px var(--glow-cyan);
+}
+
+.cancel-stop-btn {
+  flex: 1;
+  background: transparent;
+  color: #ff4444;
+  border: 1px solid rgba(255, 68, 68, 0.3);
+  padding: 11px;
+  border-radius: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.85rem;
+}
+
+.cancel-stop-btn:hover {
+  background: rgba(255, 68, 68, 0.1);
+  border-color: #ff4444;
+}
+
+.stop-input-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.stop-input-close:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.timer-button.stop-btn:hover {
+  background: rgba(255, 68, 68, 0.1);
+  border-color: #ff4444;
+  color: #ff4444;
+}
+
+.timer-button.stop-btn.active {
+  background: #ff4444;
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 0 15px rgba(255, 68, 68, 0.4);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-15px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 /* Адаптивность для мобильных устройств */
 @media (max-width: 768px) {
+  .stop-input-field {
+    width: 90%;
+    max-width: 320px;
+    padding: 20px;
+  }
+
+  @keyframes mobilePop {
+    from { opacity: 0; transform: translate(-50%, -45%) scale(0.9); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  }
+
+  .confirm-stop-btn {
+    height: 50px;
+    flex: none; /* Disable flex-grow for sizing */
+  }
+
+  .cancel-stop-btn {
+    height: 50px;
+    flex: none;
+  }
+  
   .task-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 15px;
-    padding: 16px 18px;
+    padding: 20px;
     -webkit-tap-highlight-color: transparent;
   }
 
   .task-color-indicator {
     position: absolute;
-    left: 18px;
-    top: 18px;
+    left: 14px;
+    top: 24px;
+    width: 14px;
+    height: 14px;
   }
 
   .task-content {
     width: 100%;
-    padding-left: 24px;
+    padding-left: 20px;
+    box-sizing: border-box;
   }
 
   .task-name {
-    font-size: 1rem;
-    margin-bottom: 10px;
+    font-size: 1.1rem;
+    margin-bottom: 12px;
     line-height: 1.4;
   }
 
   .task-time-container {
-    gap: 4px;
+    gap: 6px;
   }
 
   .task-time-item {
-    font-size: 0.85rem;
+    font-size: 0.95rem;
   }
 
   .task-time-item .time-label {
-    min-width: 60px;
-    font-size: 0.8rem;
-  }
-
-  .task-time-item .time-value {
-    font-size: 0.9rem;
+    min-width: 70px;
   }
 
   .task-actions {
     width: 100%;
+    display: flex;
+    gap: 10px;
     justify-content: stretch;
+    margin-top: 8px;
   }
 
   .timer-button,
   .edit-button,
   .delete-button {
     flex: 1;
-    height: 48px;
-    min-height: 48px;
-    font-size: 1.1rem;
+    height: 54px;
+    min-height: 54px;
+    font-size: 1.4rem; /* Larger icons for mobile */
     touch-action: manipulation;
   }
 
-  .delete-confirm {
-    padding: 30px 20px;
-    margin: 0 15px;
-    max-width: calc(100% - 30px);
+  .timer-button span {
+    font-size: 1.4rem;
   }
 
-  .delete-confirm h3 {
-    font-size: 1.2rem;
+  .stop-input-wrapper {
+    flex: 1;
+    display: flex;
   }
 
-  .confirm-actions {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .confirm-delete-button,
-  .confirm-actions button {
-    min-height: 48px;
-    touch-action: manipulation;
+  .stop-btn {
+    width: 100% !important;
+    height: 54px !important;
   }
 }
 
@@ -370,9 +627,5 @@
 
   .task-name {
     font-size: 0.95rem;
-  }
-
-  .delete-confirm {
-    padding: 25px 15px;
   }
 }

@@ -253,7 +253,7 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 20px 0;
+  padding: 20px 0 150px 0;
   -webkit-overflow-scrolling: touch;
   -ms-overflow-style: none;  /* IE и Edge */
   scrollbar-width: none;  /* Firefox */

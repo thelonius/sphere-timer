@@ -3,7 +3,7 @@ import TaskItem from './TaskItem';
 import { useLanguage } from '../context/useLanguage';
 import './TaskList.css';
 
-function TaskList({ tasks, activeTaskIds, highlightedTaskId, onToggleTimer, onDelete, onUpdate, onReorder }) {
+function TaskList({ tasks, activeTaskIds, pulsingTaskIds, highlightedTaskId, onToggleTimer, onDelete, onUpdate, onReorder, onSetPulsing }) {
   const { t } = useLanguage();
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [draggedIndex, setDraggedIndex] = useState(null);
@@ -55,11 +55,13 @@ function TaskList({ tasks, activeTaskIds, highlightedTaskId, onToggleTimer, onDe
           key={task.id}
           task={task}
           isActive={activeTaskIds.includes(task.id)}
+          isPulsing={pulsingTaskIds?.includes(task.id)}
           isHighlighted={highlightedTaskId === task.id}
           currentTime={currentTime}
           onToggleTimer={() => onToggleTimer(task.id)}
           onDelete={() => onDelete(task.id)}
           onUpdate={(updates) => onUpdate(task.id, updates)}
+          onSetPulsing={(isPulsing) => onSetPulsing(task.id, isPulsing)}
           draggable
           onDragStart={(e) => handleDragStart(e, index)}
           onDragOver={(e) => handleDragOver(e, index)}
