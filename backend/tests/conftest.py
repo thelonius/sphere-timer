@@ -63,11 +63,22 @@ async def client(db_session, fake_redis):
     async def override_redis():
         return fake_redis
 
+    # Override FastAPI dependencies
     app.dependency_overrides[get_db] = override_db
     app.dependency_overrides[get_redis] = override_redis
+
+    # ALSO mock the global get_redis_client where it's used
+    # because some services (like ws_manager.broadcast_event) call it directly.
+    import app.services.ws_manager as ws_manager
+    from unittest.mock import AsyncMock
+    
+    original_ws_get_redis = ws_manager.get_redis_client
+    ws_manager.get_redis_client = AsyncMock(return_value=fake_redis)
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 
+    # Cleanup
     app.dependency_overrides.clear()
+    ws_manager.get_redis_client = original_ws_get_redis

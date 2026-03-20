@@ -141,6 +141,7 @@ async def start_timer(db: AsyncSession, redis: aioredis.Redis, task_id: int, use
 
     await db.commit()
     await db.refresh(task)
+    await db.refresh(task, ["history"])
     await broadcast_event(user.id, "TASK_STARTED", _task_to_dict(task))
     # Note: _stop_active_tasks already broadcasts its own "TASK_STOPPED" if we wanted,
     # but for simplicity let's rely on the client refreshing or the START event stopping others.

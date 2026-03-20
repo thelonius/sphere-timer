@@ -60,7 +60,7 @@ async def test_login_success(client: AsyncClient):
     data = resp.json()
     assert data["success"] is True
     assert "token" in data["data"]
-    assert "refresh_token" in data["data"]
+    assert "refreshToken" in data["data"]
 
 
 async def test_login_wrong_password(client: AsyncClient):
@@ -126,13 +126,13 @@ async def test_refresh_token(client: AsyncClient):
         "email": "user_refresh1@example.com",
         "password": "password123",
     })
-    refresh_token = login.json()["data"]["refresh_token"]
+    refresh_token = login.json()["data"]["refreshToken"]
 
     resp = await client.post("/api/auth/refresh", json={"refresh_token": refresh_token})
     assert resp.status_code == 200
     data = resp.json()["data"]
     assert "token" in data
-    assert "refresh_token" in data
+    assert "refreshToken" in data
     # Old refresh token should be revoked
     resp2 = await client.post("/api/auth/refresh", json={"refresh_token": refresh_token})
     assert resp2.status_code == 401

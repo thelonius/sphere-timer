@@ -26,8 +26,8 @@ async def test_create_task(client: AsyncClient):
     data = resp.json()
     assert data["success"] is True
     assert data["data"]["name"] == "Work"
-    assert data["data"]["is_active"] is False
-    assert data["data"]["total_time"] == 0
+    assert data["data"]["isActive"] is False
+    assert data["data"]["totalTime"] == 0
 
 
 async def test_list_tasks(client: AsyncClient):
@@ -85,7 +85,7 @@ async def test_start_stop_timer(client: AsyncClient):
     # Start
     start = await client.post(f"/api/tasks/{task_id}/start", headers=headers)
     assert start.status_code == 200
-    assert start.json()["data"]["is_active"] is True
+    assert start.json()["data"]["isActive"] is True
 
     # Stop
     import asyncio
@@ -93,8 +93,8 @@ async def test_start_stop_timer(client: AsyncClient):
     stop = await client.post(f"/api/tasks/{task_id}/stop", headers=headers)
     assert stop.status_code == 200
     stop_data = stop.json()["data"]
-    assert stop_data["is_active"] is False
-    assert stop_data["total_time"] >= 0
+    assert stop_data["isActive"] is False
+    assert stop_data["totalTime"] >= 0
     assert len(stop_data["history"]) >= 1
 
 
@@ -108,8 +108,8 @@ async def test_starting_new_task_stops_previous(client: AsyncClient):
 
     tasks = (await client.get("/api/tasks", headers=headers)).json()["data"]
     task_map = {t["id"]: t for t in tasks}
-    assert task_map[t1]["is_active"] is False
-    assert task_map[t2]["is_active"] is True
+    assert task_map[t1]["isActive"] is False
+    assert task_map[t2]["isActive"] is True
 
 
 async def test_stop_inactive_timer_returns_error(client: AsyncClient):

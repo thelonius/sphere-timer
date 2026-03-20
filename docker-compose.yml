@@ -28,16 +28,14 @@ services:
       retries: 5
 
   api:
-    build: .
-    ports:
-      - "3000:3000"
+    build: ./backend
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/sphere_timer
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: change-me-in-production
       ACCESS_TOKEN_EXPIRE_MINUTES: 15
       REFRESH_TOKEN_EXPIRE_DAYS: 7
-      ALLOWED_ORIGINS: "*"
+      ALLOWED_ORIGINS: "http://localhost:3000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -45,6 +43,13 @@ services:
         condition: service_healthy
     command: >
       sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 3000"
+
+  web:
+    build: ./task-timer-app
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
 
 volumes:
   postgres_data:
