@@ -101,24 +101,6 @@
   overflow-x: hidden;
 }
 
-.task-selector::-webkit-scrollbar {
-  width: 6px;
-}
-
-.task-selector::-webkit-scrollbar-track {
-  background: var(--bg-tertiary);
-  border-radius: 3px;
-}
-
-.task-selector::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 3px;
-}
-
-.task-selector::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-cyan);
-}
-
 .calendar-main {
   flex: 1;
   display: flex;

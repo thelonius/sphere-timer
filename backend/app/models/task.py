@@ -9,7 +9,7 @@ class Task(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    name: Mapped[str] = mapped_column(String(500), nullable=False)
     color: Mapped[str] = mapped_column(String(7), nullable=False)           # hex e.g. #FFD700
     total_time: Mapped[int] = mapped_column(BigInteger, default=0)          # milliseconds
     is_active: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
