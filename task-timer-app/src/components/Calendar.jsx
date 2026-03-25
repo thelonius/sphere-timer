@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useLanguage } from '../context/useLanguage';
-import { formatTimeCompact } from '../utils/timeUtils';
+import { formatTimeCompact, getTodayDate } from '../utils/timeUtils';
 import './Calendar.css';
 
 function Calendar({ tasks, onClose }) {
@@ -24,9 +24,33 @@ function Calendar({ tasks, onClose }) {
 
   const getTimeForDate = (dateString) => {
     if (!task) return 0;
-    return task.history
+    
+    let time = task.history
       .filter(h => h.date === dateString)
       .reduce((sum, h) => sum + h.time, 0);
+
+    // Add active session portion for this specific date
+    if (task.isActive && task.startTime) {
+      const now = Date.now();
+      
+      // Parse the dateString (YYYY-MM-DD) into a local timestamp
+      const [y, m, d] = dateString.split('-').map(Number);
+      const dayStart = new Date(y, m - 1, d).getTime();
+      const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+      
+      const sessionStart = task.startTime;
+      const sessionEnd = now;
+      
+      // Calculate overlap between session [sessionStart, sessionEnd] and day [dayStart, dayEnd]
+      const overlapStart = Math.max(sessionStart, dayStart);
+      const overlapEnd = Math.min(sessionEnd, dayEnd);
+      
+      if (overlapEnd > overlapStart) {
+        time += (overlapEnd - overlapStart);
+      }
+    }
+
+    return time;
   };
 
   const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(currentMonth);
@@ -54,7 +78,7 @@ function Calendar({ tasks, onClose }) {
   for (let day = 1; day <= daysInMonth; day++) {
     const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     const timeSpent = getTimeForDate(dateString);
-    const isToday = dateString === new Date().toISOString().split('T')[0];
+    const isToday = dateString === getTodayDate();
 
     days.push(
       <div 
@@ -74,6 +98,15 @@ function Calendar({ tasks, onClose }) {
       </div>
     );
   }
+
+  // Live total time for the selected task
+  const liveTotalTime = useMemo(() => {
+    if (!task) return 0;
+    if (task.isActive && task.startTime) {
+      return task.totalTime + (Date.now() - task.startTime);
+    }
+    return task.totalTime;
+  }, [task]);
 
   return (
     <div className="calendar-container">
@@ -131,13 +164,13 @@ function Calendar({ tasks, onClose }) {
           <div className="stat-item">
             <span className="stat-label">{t('totalTime')}:</span>
             <span className="stat-value" style={{ color: task.color }}>
-              {formatTimeCompact(task.totalTime, { hours: t('hours'), minutes: t('minutes') })}
+              {formatTimeCompact(liveTotalTime, { hours: t('hours'), minutes: t('minutes') })}
             </span>
           </div>
           <div className="stat-item">
             <span className="stat-label">{t('sessions')}:</span>
             <span className="stat-value" style={{ color: task.color }}>
-              {task.history.length}
+              {task.history.length + (task.isActive ? 1 : 0)}
             </span>
           </div>
         </div>

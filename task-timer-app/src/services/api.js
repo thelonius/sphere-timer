@@ -26,8 +26,35 @@ const fetchWithAuth = async (endpoint, options = {}) => {
     const response = await fetch(`${API_URL}${endpoint}`, config);
     
     // Если токен истек или невалиден (и это не попытка входа)
-    if (response.status === 401 && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/register')) {
+    if (response.status === 401 && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/register') && !endpoint.includes('/auth/refresh')) {
+      const refreshTokenValue = getItem(STORAGE_KEYS.REFRESH_TOKEN);
+      if (refreshTokenValue) {
+        try {
+          const res = await fetch(`${API_URL}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken: refreshTokenValue })
+          });
+          if (res.ok) {
+            const refreshData = await res.json();
+            if (refreshData.success) {
+              setItem(STORAGE_KEYS.AUTH_TOKEN, refreshData.data.token);
+              setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshData.data.refreshToken);
+              // Retry the original request
+              config.headers['Authorization'] = `Bearer ${refreshData.data.token}`;
+              const retryRes = await fetch(`${API_URL}${endpoint}`, config);
+              if (retryRes.ok) {
+                return await retryRes.json();
+              }
+            }
+          }
+        } catch (err) {
+            console.error('Failed to refresh token', err);
+        }
+      }
+      
       removeItem(STORAGE_KEYS.AUTH_TOKEN);
+      removeItem(STORAGE_KEYS.REFRESH_TOKEN);
       removeItem(STORAGE_KEYS.USER_DATA);
       window.location.reload();
       return;
@@ -75,8 +102,11 @@ export const authAPI = {
 
   // Выход
   logout: async () => {
+    const refreshToken = getItem(STORAGE_KEYS.REFRESH_TOKEN);
+    const bodyObj = refreshToken ? { refreshToken } : {};
     return fetchWithAuth('/auth/logout', {
       method: 'POST',
+      body: JSON.stringify(bodyObj),
     });
   },
 

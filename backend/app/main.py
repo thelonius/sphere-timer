@@ -50,6 +50,7 @@ async def websocket_endpoint(
     websocket: WebSocket,
     token: str = Query(...),
 ):
+    user_id = None
     try:
         # Authenticate
         payload = decode_token(token)
@@ -63,9 +64,12 @@ async def websocket_endpoint(
             # but we need this to detect disconnection
             await websocket.receive_text()
     except WebSocketDisconnect:
-        manager.disconnect(user_id, websocket)
+        pass  # Handled in finally
     except Exception as e:
-        print(f"WS Error: {e}")
+        print(f"WS Error for user {user_id}: {e}")
+    finally:
+        if user_id is not None:
+            manager.disconnect(user_id, websocket)
         try:
             await websocket.close()
         except:

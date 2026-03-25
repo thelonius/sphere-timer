@@ -36,9 +36,10 @@ export const AuthProvider = ({ children }) => {
   const register = async (username, email, password) => {
     try {
       const data = await authAPI.register(username, email, password);
-      const { user: userData, token } = data.data;
+      const { user: userData, token, refreshToken } = data.data;
       
       setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+      setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
       setItem(STORAGE_KEYS.USER_DATA, userData);
       setUser(userData);
       
@@ -51,9 +52,10 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const data = await authAPI.login(email, password);
-      const { user: userData, token } = data.data;
+      const { user: userData, token, refreshToken } = data.data;
       
       setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+      setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
       setItem(STORAGE_KEYS.USER_DATA, userData);
       setUser(userData);
       

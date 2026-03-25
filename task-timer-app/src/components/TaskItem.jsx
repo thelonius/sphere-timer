@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '../context/useLanguage';
 import TaskForm from './TaskForm';
-import { formatTime, getTodayDate } from '../utils/timeUtils';
+import { formatTime, formatDate, getTodayDate } from '../utils/timeUtils';
 import './TaskItem.css';
 
 function TaskItem({ 
@@ -43,14 +43,13 @@ function TaskItem({
     const historyTime = todayHistory.reduce((sum, h) => sum + h.time, 0);
     
     if (isActive && task.startTime) {
-      try {
-        const startDate = new Date(task.startTime).toISOString().split('T')[0];
-        if (startDate === today) {
-          return historyTime + (currentTime - task.startTime);
-        }
-      } catch (e) {
-        console.error('Invalid startTime:', task.startTime);
-      }
+      // Midnight today in milliseconds (local time relative to current time)
+      const d = new Date(currentTime);
+      const midnight = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      
+      // We only count the portion of the active session that falls within current day
+      const effectiveStartTime = Math.max(task.startTime, midnight);
+      return historyTime + (currentTime - effectiveStartTime);
     }
     
     return historyTime;

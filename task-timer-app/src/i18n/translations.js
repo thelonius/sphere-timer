@@ -55,7 +55,7 @@ export const translations = {
     calendar: 'Календарь',
     totalTaskTime: 'Общее',
     todayTime: 'Сегодня',
-    currentSession: 'Сейчас',
+    currentSession: 'Текущая сессия',
     stopAfter: 'Остановить через',
     minutes: 'мин',
     
@@ -246,7 +246,7 @@ export const translations = {
     calendar: 'Calendar',
     totalTaskTime: 'Total',
     todayTime: 'Today',
-    currentSession: 'Current',
+    currentSession: 'Current session',
     stopAfter: 'Stop after',
     minutes: 'min',
     

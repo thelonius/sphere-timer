@@ -64,7 +64,7 @@ async def start_timer(
     task = await task_service.start_timer(db, redis, task_id, current_user)
     return {
         "success": True,
-        "data": {"id": task.id, "isActive": task.is_active, "startTime": task.start_time},
+        "data": _task_out(task),
         "message": "Timer started",
     }
 
@@ -79,14 +79,7 @@ async def stop_timer(
     task, elapsed = await task_service.stop_timer(db, redis, task_id, current_user)
     return {
         "success": True,
-        "data": {
-            "id": task.id,
-            "isActive": False,
-            "startTime": None,
-            "totalTime": task.total_time,
-            "timeAdded": elapsed,
-            "history": [_history_out(h) for h in task.history],
-        },
+        "data": _task_out(task),
         "message": "Timer stopped",
     }
 

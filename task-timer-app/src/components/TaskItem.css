@@ -104,23 +104,26 @@
 
 .task-time-item {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: baseline; /* Align by text baseline */
+  gap: 12px;
   font-size: 0.9rem;
 }
 
 .task-time-item .time-label {
   color: var(--text-secondary);
   font-size: 0.85rem;
-  min-width: 70px;
+  min-width: 140px; /* Space for the longest label "Текущая сессия:" */
+  display: inline-block;
 }
 
 .task-time-item .time-value {
   font-family: 'Courier New', monospace;
+  font-variant-numeric: tabular-nums;
   font-weight: 400;
   color: var(--accent-cyan);
   letter-spacing: 0.5px;
   font-size: 1rem;
+  flex-shrink: 0;
 }
 
 .task-time-item.current-session .time-value {

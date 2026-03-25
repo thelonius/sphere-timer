@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_db, get_redis, get_current_user, rate_limit
 from app.models.user import User
-from app.schemas.auth import RegisterRequest, LoginRequest, RefreshRequest, UserOut, TokenData
+from app.schemas.auth import RegisterRequest, LoginRequest, RefreshRequest, LogoutRequest, UserOut, TokenData
 from app.services import auth_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -56,11 +56,12 @@ async def login(
 
 @router.post("/logout")
 async def logout(
+    body: LogoutRequest,
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(bearer_scheme)],
     redis: Annotated[aioredis.Redis, Depends(get_redis)],
-    _current: Annotated[User, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ):
-    await auth_service.logout_user(redis, credentials.credentials)
+    await auth_service.logout_user(redis, credentials.credentials, current_user.id, body.refreshToken)
     return {"success": True, "message": "Logout successful"}
 
 

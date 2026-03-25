@@ -1,5 +1,5 @@
 import time
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 
 from fastapi import HTTPException, status
 from sqlalchemy import select, func
@@ -30,14 +30,19 @@ def _task_to_dict(t: Task) -> dict:
     }
 
 
+from sqlalchemy.orm import selectinload
+
+from sqlalchemy.orm import selectinload
+
 async def get_tasks(db: AsyncSession, user: User) -> list[Task]:
     result = await db.execute(
-        select(Task).where(Task.user_id == user.id).order_by(Task.order_index)
+        select(Task)
+        .where(Task.user_id == user.id)
+        .order_by(Task.order_index)
+        .options(selectinload(Task.history))
+        .execution_options(populate_existing=True)
     )
     tasks = result.scalars().all()
-    # Eagerly load history for each task
-    for task in tasks:
-        await db.refresh(task, ["history"])
     return list(tasks)
 
 
@@ -48,19 +53,24 @@ async def create_task(db: AsyncSession, user: User, name: str, color: str) -> Ta
     task = Task(user_id=user.id, name=name, color=color, order_index=max_order + 1)
     db.add(task)
     await db.commit()
-    await db.refresh(task)
-    await db.refresh(task, ["history"])
+    # To get history properly loaded, we fetch it
+    result = await db.execute(
+        select(Task).where(Task.id == task.id).options(selectinload(Task.history)).execution_options(populate_existing=True)
+    )
+    task = result.scalar_one()
     await broadcast_event(user.id, "TASK_CREATED", _task_to_dict(task))
     return task
 
 
 async def get_task_or_404(db: AsyncSession, task_id: int, user: User) -> Task:
-    task = await db.get(Task, task_id)
+    result = await db.execute(
+        select(Task).where(Task.id == task_id).options(selectinload(Task.history)).execution_options(populate_existing=True)
+    )
+    task = result.scalar_one_or_none()
     if task is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
     if task.user_id != user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-    await db.refresh(task, ["history"])
     return task
 
 
@@ -75,10 +85,9 @@ async def update_task(
     if order_index is not None:
         task.order_index = order_index
     await db.commit()
-    await db.refresh(task)
-    await db.refresh(task, ["history"])
-    await broadcast_event(user.id, "TASK_UPDATED", _task_to_dict(task))
-    return task
+    updated_task = await get_task_or_404(db, task_id, user)
+    await broadcast_event(user.id, "TASK_UPDATED", _task_to_dict(updated_task))
+    return updated_task
 
 
 async def delete_task(db: AsyncSession, redis: aioredis.Redis, task_id: int, user: User) -> None:
@@ -94,7 +103,10 @@ async def delete_task(db: AsyncSession, redis: aioredis.Redis, task_id: int, use
 async def _stop_active_tasks(db: AsyncSession, redis: aioredis.Redis, user: User) -> None:
     """Stop any currently running task for this user."""
     result = await db.execute(
-        select(Task).where(Task.user_id == user.id, Task.is_active == True)  # noqa: E712
+        select(Task)
+        .where(Task.user_id == user.id, Task.is_active == True)
+        .options(selectinload(Task.history))
+        .execution_options(populate_existing=True)
     )
     active_tasks = result.scalars().all()
     for t in active_tasks:
@@ -131,20 +143,15 @@ async def _do_stop(db: AsyncSession, redis: aioredis.Redis, task: Task) -> int:
 async def start_timer(db: AsyncSession, redis: aioredis.Redis, task_id: int, user: User) -> Task:
     task = await get_task_or_404(db, task_id, user)
 
-    # Auto-stop any other active task
-    await _stop_active_tasks(db, redis, user)
-
     now_ms = _now_ms()
     task.is_active = True
     task.start_time = now_ms
     await redis.set(f"timer:{task_id}", str(now_ms))
 
     await db.commit()
-    await db.refresh(task)
-    await db.refresh(task, ["history"])
+    db.expunge_all()
+    task = await get_task_or_404(db, task_id, user)
     await broadcast_event(user.id, "TASK_STARTED", _task_to_dict(task))
-    # Note: _stop_active_tasks already broadcasts its own "TASK_STOPPED" if we wanted,
-    # but for simplicity let's rely on the client refreshing or the START event stopping others.
     return task
 
 
@@ -155,8 +162,8 @@ async def stop_timer(db: AsyncSession, redis: aioredis.Redis, task_id: int, user
 
     elapsed = await _do_stop(db, redis, task)
     await db.commit()
-    await db.refresh(task)
-    await db.refresh(task, ["history"])
+    db.expunge_all()
+    task = await get_task_or_404(db, task_id, user)
     await broadcast_event(user.id, "TASK_STOPPED", _task_to_dict(task))
     return task, elapsed
 
@@ -181,21 +188,64 @@ async def get_stats(
     history_result = await db.execute(history_query)
     all_history = history_result.scalars().all()
 
-    total_time = sum(h.time for h in all_history)
-    total_sessions = sum(h.sessions for h in all_history)
+    total_time: int = 0
+    total_sessions: int = 0
+    for h in all_history:
+        total_time += h.time
+        total_sessions += h.sessions
 
     # Group daily
     daily: dict[date, dict] = {}
     for h in all_history:
-        if h.date not in daily:
-            daily[h.date] = {"date": h.date, "time": 0, "sessions": 0}
-        daily[h.date]["time"] += h.time
-        daily[h.date]["sessions"] += h.sessions
+        h_date = h.date
+        if h_date not in daily:
+            daily[h_date] = {"date": h_date, "time": 0, "sessions": 0}
+        daily[h_date]["time"] += h.time
+        daily[h_date]["sessions"] += h.sessions
+
+    # Include active session portions for all days it covers
+    for t in tasks:
+        if t.is_active and t.start_time:
+            n_ms = _now_ms()
+            total_time = total_time + (n_ms - t.start_time)
+            total_sessions = total_sessions + 1
+
+            # Distribute time across days
+            s_start_dt = datetime.fromtimestamp(t.start_time / 1000).date()
+            t_dt = date.today()
+            
+            c_d = s_start_dt
+            while c_d <= t_dt:
+                # Check if this day is within requested range
+                in_range = True
+                if start_date is not None and c_d < start_date:
+                    in_range = False
+                if end_date is not None and c_d > end_date:
+                    in_range = False
+                
+                if in_range:
+                    d_start_ms = int(datetime.combine(c_d, datetime.min.time()).replace(tzinfo=None).timestamp() * 1000)
+                    d_end_ms = d_start_ms + 86400000 # 24 * 60 * 60 * 1000
+                    
+                    ov_start = max(t.start_time, d_start_ms)
+                    ov_end = min(n_ms, d_end_ms)
+                    
+                    if ov_end > ov_start:
+                        if c_d not in daily:
+                            daily[c_d] = {"date": c_d, "time": 0, "sessions": 0}
+                        daily[c_d]["time"] += (ov_end - ov_start)
+                        if c_d == t_dt:
+                            daily[c_d]["sessions"] += 1
+                
+                c_d = c_d + timedelta(days=1)
 
     return {
         "total_time": total_time,
         "total_sessions": total_sessions,
         "tasks_count": len(tasks),
-        "active_tasks": sum(1 for t in tasks if t.is_active),
-        "daily_stats": sorted(daily.values(), key=lambda x: x["date"]),
+        "active_tasks": int(sum(1 for task in tasks if task.is_active)),
+        "daily_stats": sorted(
+            [{"date": str(v["date"]), "time": v["time"], "sessions": v["sessions"]} for v in daily.values()],
+            key=lambda x: str(x["date"])
+        ),
     }

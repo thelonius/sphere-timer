@@ -42,25 +42,27 @@ class ConnectionManager:
             async for message in pubsub.listen():
                 if message["type"] == "message":
                     data = message["data"]
-                    if isinstance(data, bytes):
+                    if isinstance(data, bytes) :
                         data = data.decode("utf-8")
                     
-                    # Broadcast to all this user's connections
-                    if user_id in self.active_connections:
-                        dead_links = []
-                        for ws in self.active_connections[user_id]:
-                            try:
-                                await ws.send_text(data)
-                            except Exception:
-                                dead_links.append(ws)
-                        
-                        # Cleanup dead links
-                        for ws in dead_links:
+                    # Broadcast to a copy of the set to avoid "Set changed size during iteration"
+                    connections = list(self.active_connections.get(user_id, set()))
+                    for ws in connections:
+                        try:
+                            await ws.send_text(data)
+                        except Exception:
+                            # If connection is dead, cleanup
                             self.disconnect(user_id, ws)
         except asyncio.CancelledError:
-            await pubsub.unsubscribe(channel)
+            pass # normal termination
         except Exception as e:
             print(f"Error in Redis listener for user {user_id}: {e}")
+        finally:
+            try:
+                await pubsub.unsubscribe(channel)
+                await pubsub.close()
+            except:
+                pass
 
 manager = ConnectionManager()
 

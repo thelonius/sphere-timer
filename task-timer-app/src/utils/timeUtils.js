@@ -9,10 +9,7 @@ export function formatTime(milliseconds) {
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
 
-  if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
 /**
@@ -32,9 +29,22 @@ export function formatTimeCompact(milliseconds, translations = { hours: 'ч', mi
 }
 
 /**
- * Получает текущую дату в формате YYYY-MM-DD
+ * Форматирует дату или таймштамп в локальный формат YYYY-MM-DD
+ * @param {Date|number} date - дата или таймштамп
+ * @returns {string} - дата в формате YYYY-MM-DD
+ */
+export function formatDate(date) {
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = (d.getMonth() + 1).toString().padStart(2, '0');
+  const day = d.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Получает текущую дату в локальном часовом поясе в формате YYYY-MM-DD
  * @returns {string} - дата в формате YYYY-MM-DD
  */
 export function getTodayDate() {
-  return new Date().toISOString().split('T')[0];
+  return formatDate(new Date());
 }

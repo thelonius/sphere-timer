@@ -7,6 +7,7 @@ import Calendar from './Calendar';
 import Constellations from './Constellations';
 import Notification from './Notification';
 import { saveTasks, loadTasks } from '../utils/storageUtils';
+import { getTodayDate } from '../utils/timeUtils';
 import { tasksAPI } from '../services/api';
 import './Dashboard.css';
 
@@ -25,6 +26,14 @@ function Dashboard({ user, onLogout }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [syncStatus, setSyncStatus] = useState('connecting');
+
+  // Timer for updating global current time once per second
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -56,9 +65,9 @@ function Dashboard({ user, onLogout }) {
     switch (type) {
       case 'TASK_STARTED':
         setTasks(prev => prev.map(t => 
-          t.id === data.id ? { ...t, ...data } : { ...t, isActive: false, startTime: null }
+          t.id === data.id ? { ...t, ...data } : t
         ));
-        setActiveTaskIds([data.id]);
+        setActiveTaskIds(prev => prev.includes(data.id) ? prev : [...prev, data.id]);
         break;
       
       case 'TASK_STOPPED':
@@ -266,10 +275,8 @@ function Dashboard({ user, onLogout }) {
     try {
       const response = await tasksAPI.deleteTask(taskId);
       if (response.success) {
-        if (activeTaskIds.includes(taskId)) {
-          setActiveTaskIds(activeTaskIds.filter(id => id !== taskId));
-        }
-        setTasks(tasks.filter(task => task.id !== taskId));
+        setActiveTaskIds(prev => prev.filter(id => id !== taskId));
+        setTasks(prev => prev.filter(task => task.id !== taskId));
       }
     } catch (error) {
       setNotification(error.message);
@@ -280,7 +287,7 @@ function Dashboard({ user, onLogout }) {
     try {
       const response = await tasksAPI.updateTask(taskId, updates);
       if (response.success) {
-        setTasks(tasks.map(task => 
+        setTasks(prev => prev.map(task => 
           task.id === taskId ? response.data : task
         ));
       }
@@ -289,55 +296,87 @@ function Dashboard({ user, onLogout }) {
     }
   };
 
-  const toggleTimer = (taskId) => {
+  const toggleTimer = async (taskId) => {
     // Если задача пульсирует, то нажатие на нее (в любом месте, но тут через toggle) останавливает пульсацию
-    if (pulsingTaskIds.includes(taskId)) {
-      setPulsingTaskIds(pulsingTaskIds.filter(id => id !== taskId));
-    }
+    setPulsingTaskIds(prev => prev.filter(id => id !== taskId));
 
-    if (activeTaskIds.includes(taskId)) {
+    const isCurrentlyActive = activeTaskIds.includes(taskId);
+
+    if (isCurrentlyActive) {
       // Остановить таймер
       const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
       const now = Date.now();
       const sessionTime = now - task.startTime;
       
-      const updatedTask = {
+      const optimisticUpdate = {
         ...task,
         totalTime: task.totalTime + sessionTime,
         history: [
           ...task.history,
           {
-            date: new Date().toISOString().split('T')[0],
+            date: getTodayDate(),
             time: sessionTime,
             timestamp: now,
           }
         ],
         startTime: null,
+        isActive: false
       };
       
-      setTasks(tasks.map(t => t.id === taskId ? updatedTask : t));
-      setActiveTaskIds(activeTaskIds.filter(id => id !== taskId));
+      // Оптимистичное обновление UI
+      setTasks(prev => prev.map(t => t.id === taskId ? optimisticUpdate : t));
+      setActiveTaskIds(prev => prev.filter(id => id !== taskId));
       
-      // Записываем локально в сторадж чтобы не терять до синхронизации бэка
-      saveTasks(user?.username || 'default', tasks.map(t => t.id === taskId ? updatedTask : t));
+      // Сохраняем в localStorage для надежности (делаем это с новыми задачами)
+      setTasks(currentTasks => {
+        const nextTasks = currentTasks.map(t => t.id === taskId ? optimisticUpdate : t);
+        saveTasks(user?.username || 'default', nextTasks);
+        return nextTasks;
+      });
+
+      // Отправка на бэкенд
+      try {
+        const response = await tasksAPI.stopTimer(taskId);
+        if (response.success) {
+          // Обновляем задачу точными данными с бэкенда
+          setTasks(prev => prev.map(t => t.id === taskId ? response.data : t));
+        }
+      } catch (error) {
+        setNotification(error.message);
+      }
     } else {
       // Запустить таймер
-      const updatedTasks = tasks.map(t => 
-        t.id === taskId ? { ...t, startTime: Date.now() } : t
-      );
-      setTasks(updatedTasks);
-      setActiveTaskIds([...activeTaskIds, taskId]);
+      const now = Date.now();
       
-      // Записываем локально в сторадж чтобы не терять до синхронизации бэка
-      saveTasks(user?.username || 'default', updatedTasks);
+      // Оптимистичное обновление UI
+      setTasks(prev => prev.map(t => 
+        t.id === taskId ? { ...t, startTime: now, isActive: true } : t
+      ));
+      setActiveTaskIds(prev => [...prev, taskId]);
+
+      setTasks(currentTasks => {
+        saveTasks(user?.username || 'default', currentTasks);
+        return currentTasks;
+      });
+
+      // Отправка на бэкенд
+      try {
+        const response = await tasksAPI.startTimer(taskId);
+        if (response.success) {
+          // Обновляем задачу точными данными с бэкенда
+          setTasks(prev => prev.map(t => t.id === taskId ? response.data : t));
+        }
+      } catch (error) {
+        setNotification(error.message);
+      }
     }
   };
 
   const setTaskPulsing = (taskId, isPulsing) => {
     if (isPulsing) {
-      if (!pulsingTaskIds.includes(taskId)) {
-        setPulsingTaskIds(prev => [...prev, taskId]);
-      }
+      setPulsingTaskIds(prev => prev.includes(taskId) ? prev : [...prev, taskId]);
     } else {
       setPulsingTaskIds(prev => prev.filter(id => id !== taskId));
     }

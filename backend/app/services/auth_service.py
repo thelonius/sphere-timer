@@ -66,8 +66,8 @@ async def login_user(db: AsyncSession, redis: aioredis.Redis, email: str, passwo
     return user, access, refresh
 
 
-async def logout_user(redis: aioredis.Redis, access_token: str) -> None:
-    """Blacklist the access token until it naturally expires."""
+async def logout_user(redis: aioredis.Redis, access_token: str, user_id: int, refresh_token: str | None) -> None:
+    """Blacklist the access token until it naturally expires and revoke refresh token."""
     try:
         payload = jwt.decode(access_token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
         exp = payload.get("exp")
@@ -76,6 +76,9 @@ async def logout_user(redis: aioredis.Redis, access_token: str) -> None:
             await redis.set(f"blacklist:{access_token}", "1", ex=ttl)
     except JWTError:
         pass  # already invalid — nothing to do
+        
+    if refresh_token:
+        await redis.delete(f"refresh:{user_id}:{refresh_token}")
 
 
 async def refresh_tokens(redis: aioredis.Redis, refresh_token: str) -> tuple[str, str]:
