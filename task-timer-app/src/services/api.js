@@ -2,7 +2,7 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 console.log('Current API URL:', API_URL);
 
-import { getItem, removeItem, STORAGE_KEYS } from '../utils/storageUtils';
+import { getItem, setItem, removeItem, STORAGE_KEYS } from '../utils/storageUtils';
 
 // Получение токена из localStorage
 const getAuthToken = () => {
@@ -49,7 +49,7 @@ const fetchWithAuth = async (endpoint, options = {}) => {
             }
           }
         } catch (err) {
-            console.error('Failed to refresh token', err);
+          console.error('Failed to refresh token', err);
         }
       }
       
@@ -97,6 +97,14 @@ export const authAPI = {
     return fetchWithAuth('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
+    });
+  },
+
+  // Сброс пароля (забытый пароль)
+  resetPassword: async (email, newPassword) => {
+    return fetchWithAuth('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ email, new_password: newPassword }),
     });
   },
 
@@ -205,7 +213,7 @@ export const userAPI = {
   changePassword: async (currentPassword, newPassword) => {
     return fetchWithAuth('/user/password', {
       method: 'PUT',
-      body: JSON.stringify({ currentPassword, newPassword }),
+      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
     });
   },
 };

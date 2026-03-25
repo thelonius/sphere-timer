@@ -9,6 +9,7 @@ import Notification from './Notification';
 import { saveTasks, loadTasks } from '../utils/storageUtils';
 import { getTodayDate } from '../utils/timeUtils';
 import { tasksAPI } from '../services/api';
+import SettingsModal from './SettingsModal';
 import './Dashboard.css';
 
 function Dashboard({ user, onLogout }) {
@@ -20,6 +21,7 @@ function Dashboard({ user, onLogout }) {
   const [activeTaskIds, setActiveTaskIds] = useState([]);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [highlightedTaskId, setHighlightedTaskId] = useState(null);
   const [pulsingTaskIds, setPulsingTaskIds] = useState([]);
   const [notification, setNotification] = useState(null);
@@ -395,7 +397,12 @@ function Dashboard({ user, onLogout }) {
           </div>
           <div className="header-center">
             {/* <h1 className="dashboard-title">SphereTimer</h1> */}
-            <div className="user-badge">
+            <div 
+              className="user-badge" 
+              onClick={() => setShowSettings(true)}
+              style={{ cursor: 'pointer' }}
+              title={t('settings')}
+            >
               <div className="user-avatar">{user.username[0].toUpperCase()}</div>
               <span className="username">{user.username}</span>
             </div>
@@ -481,6 +488,13 @@ function Dashboard({ user, onLogout }) {
             />
           </div>
         </div>
+      )}
+
+      {showSettings && (
+        <SettingsModal 
+          user={user}
+          onClose={() => setShowSettings(false)}
+        />
       )}
 
       {notification && (

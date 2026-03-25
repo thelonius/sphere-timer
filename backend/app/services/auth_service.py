@@ -103,3 +103,31 @@ async def refresh_tokens(redis: aioredis.Redis, refresh_token: str) -> tuple[str
     await redis.set(f"refresh:{user_id}:{new_refresh}", "1", ex=ttl)
 
     return new_access, new_refresh
+
+
+async def change_password(db: AsyncSession, user: User, current_password: str, new_password: str) -> None:
+    if not verify_password(current_password, user.password_hash):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect current password")
+    
+    if len(new_password) < 6:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password must be at least 6 characters")
+    
+    user.password_hash = hash_password(new_password)
+    db.add(user)
+    await db.commit()
+
+
+async def reset_password(db: AsyncSession, email: str, new_password: str) -> None:
+    # Note: In a production app, we would use a verification token (OTP) sent to the email.
+    # For this implementation, we follow the user's request for a reset field.
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    
+    if len(new_password) < 6:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password must be at least 6 characters")
+    
+    user.password_hash = hash_password(new_password)
+    db.add(user)
+    await db.commit()

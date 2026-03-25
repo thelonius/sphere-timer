@@ -232,6 +232,38 @@
   75% { transform: translateX(5px); }
 }
 
+.success-message {
+  margin-top: 15px;
+  padding: 12px;
+  background: rgba(126, 176, 155, 0.1);
+  border: 1px solid rgba(126, 176, 155, 0.3);
+  border-radius: 8px;
+  color: var(--accent-cyan);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.forgot-password-link {
+  text-align: right;
+  margin-top: -30px;
+  margin-bottom: 30px;
+}
+
+.text-button {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.text-button:hover {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+}
+
 .auth-switch {
   margin-top: 25px;
   text-align: center;

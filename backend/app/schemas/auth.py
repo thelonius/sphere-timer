@@ -33,3 +33,13 @@ class RefreshRequest(BaseModel):
 
 class LogoutRequest(BaseModel):
     refreshToken: str | None = None
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    new_password: str

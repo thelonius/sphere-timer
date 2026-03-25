@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_db, get_redis, get_current_user, rate_limit
 from app.models.user import User
-from app.schemas.auth import RegisterRequest, LoginRequest, RefreshRequest, LogoutRequest, UserOut, TokenData
+from app.schemas.auth import RegisterRequest, LoginRequest, RefreshRequest, LogoutRequest, UserOut, TokenData, ChangePasswordRequest, ResetPasswordRequest
 from app.services import auth_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -84,3 +84,22 @@ async def refresh(
         "data": {"token": new_access, "refreshToken": new_refresh},
         "message": "Token refreshed",
     }
+
+
+@router.post("/change-password")
+async def change_password(
+    body: ChangePasswordRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    await auth_service.change_password(db, current_user, body.current_password, body.new_password)
+    return {"success": True, "message": "Password changed successfully"}
+
+
+@router.post("/reset-password")
+async def reset_password(
+    body: ResetPasswordRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    await auth_service.reset_password(db, body.email, body.new_password)
+    return {"success": True, "message": "Password reset successfully"}

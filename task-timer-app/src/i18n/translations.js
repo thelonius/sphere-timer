@@ -16,6 +16,7 @@ export const translations = {
     alreadyHaveAccount: 'Уже есть аккаунт?',
     noAccount: 'Нет аккаунта?',
     logout: 'Выйти',
+    settings: 'Настройки',
     loading: 'Загрузка...',
     
     // Validation errors
@@ -26,6 +27,17 @@ export const translations = {
     enterPassword: 'Введите пароль',
     passwordTooShort: 'Пароль должен быть не менее 6 символов',
     passwordsNotMatch: 'Пароли не совпадают',
+    forgotPassword: 'Забыли пароль?',
+    resetPassword: 'Сбросить пароль',
+    changePassword: 'Изменить пароль',
+    currentPassword: 'Текущий пароль',
+    newPassword: 'Новый пароль',
+    confirmNewPassword: 'Подтвердите новый пароль',
+    passwordChanged: 'Пароль успешно изменен',
+    passwordResetSuccess: 'Пароль успешно сброшен',
+    enterEmailForReset: 'Введите email для сброса пароля',
+    backToLogin: 'Вернуться ко входу',
+    allFieldsRequired: 'Все поля обязательны для заполнения',
     
     // Dashboard
     myTasks: 'Мои задачи',
@@ -207,6 +219,7 @@ export const translations = {
     alreadyHaveAccount: 'Already have an account?',
     noAccount: 'No account?',
     logout: 'Logout',
+    settings: 'Settings',
     loading: 'Loading...',
     
     // Validation errors
@@ -217,6 +230,17 @@ export const translations = {
     enterPassword: 'Enter password',
     passwordTooShort: 'Password must be at least 6 characters',
     passwordsNotMatch: 'Passwords do not match',
+    forgotPassword: 'Forgot password?',
+    resetPassword: 'Reset password',
+    changePassword: 'Change password',
+    currentPassword: 'Current password',
+    newPassword: 'New password',
+    confirmNewPassword: 'Confirm new password',
+    passwordChanged: 'Password changed successfully',
+    passwordResetSuccess: 'Password reset successfully',
+    enterEmailForReset: 'Enter email to reset password',
+    backToLogin: 'Back to login',
+    allFieldsRequired: 'All fields are required',
     
     // Dashboard
     myTasks: 'My Tasks',
