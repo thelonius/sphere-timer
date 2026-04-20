@@ -143,6 +143,8 @@ async def _do_stop(db: AsyncSession, redis: aioredis.Redis, task: Task) -> int:
 async def start_timer(db: AsyncSession, redis: aioredis.Redis, task_id: int, user: User) -> Task:
     task = await get_task_or_404(db, task_id, user)
 
+    await _stop_active_tasks(db, redis, user)
+
     now_ms = _now_ms()
     task.is_active = True
     task.start_time = now_ms

@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Body, Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import redis.asyncio as aioredis
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -56,12 +56,13 @@ async def login(
 
 @router.post("/logout")
 async def logout(
-    body: LogoutRequest,
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(bearer_scheme)],
     redis: Annotated[aioredis.Redis, Depends(get_redis)],
     current_user: Annotated[User, Depends(get_current_user)],
+    body: Annotated[LogoutRequest | None, Body()] = None,
 ):
-    await auth_service.logout_user(redis, credentials.credentials, current_user.id, body.refreshToken)
+    refresh_token = body.refreshToken if body else None
+    await auth_service.logout_user(redis, credentials.credentials, current_user.id, refresh_token)
     return {"success": True, "message": "Logout successful"}
 
 
