@@ -50,27 +50,31 @@ async def websocket_endpoint(
     websocket: WebSocket,
     token: str = Query(...),
 ):
+    # Accept first so the client always gets a clean close frame instead of ECONNRESET
+    await websocket.accept()
     user_id = None
     try:
-        # Authenticate
         payload = decode_token(token)
         user_id = int(payload["sub"])
-        
-        await manager.connect(user_id, websocket)
-        
-        # Keep connection open until disconnect
+
+        await manager.connect_already_accepted(user_id, websocket)
+
         while True:
-            # We don't expect messages from client yet, 
-            # but we need this to detect disconnection
             await websocket.receive_text()
     except WebSocketDisconnect:
-        pass  # Handled in finally
+        pass
     except Exception as e:
         print(f"WS Error for user {user_id}: {e}")
+        try:
+            # 4001 = auth error; frontend uses this to trigger token refresh
+            await websocket.close(code=4001)
+        except Exception:
+            pass
+        return
     finally:
         if user_id is not None:
             manager.disconnect(user_id, websocket)
         try:
             await websocket.close()
-        except:
+        except Exception:
             pass

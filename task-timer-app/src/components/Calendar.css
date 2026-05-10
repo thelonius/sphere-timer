@@ -38,6 +38,11 @@
 .close-button {
   width: 36px;
   height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  box-sizing: border-box;
+  padding: 0;
+  flex-shrink: 0;
   border-radius: 50%;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
@@ -307,6 +312,8 @@
   .close-button {
     width: 32px;
     height: 32px;
+    min-width: 32px;
+    min-height: 32px;
     font-size: 1.8rem;
   }
 
@@ -350,6 +357,24 @@
     min-height: 0;
   }
 
+  .date-filter-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .task-selector-divider {
+    width: 1px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 0 4px;
+    flex-shrink: 0;
+  }
+
+  .task-selector-archive-label {
+    display: flex;
+    align-items: center;
+  }
+
   .calendar-controls h3 {
     font-size: 1rem;
   }
@@ -390,6 +415,84 @@
   .stat-value {
     font-size: 1.3rem;
   }
+}
+
+/* ─── Archive task selector extras ───────────────────────────────────────── */
+
+.task-selector-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 4px 0;
+  flex-shrink: 0;
+}
+
+.task-selector-archive-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-secondary);
+  padding: 2px 4px;
+  flex-shrink: 0;
+}
+
+/* ─── Date range filter ───────────────────────────────────────────────────── */
+
+.date-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0 4px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.date-filter-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.date-filter-input {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  padding: 6px 10px;
+  outline: none;
+  transition: border-color 0.2s;
+  color-scheme: dark;
+}
+
+.date-filter-input:focus {
+  border-color: var(--accent-cyan);
+}
+
+.date-filter-input--invalid {
+  border-color: rgba(255, 100, 100, 0.5);
+}
+
+.date-filter-today,
+.date-filter-clear {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.date-filter-today:hover {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+.date-filter-clear:hover {
+  border-color: #ff6666;
+  color: #ff6666;
 }
 
 @media (max-width: 480px) {

@@ -6,22 +6,40 @@ import TaskForm from './TaskForm';
 import Calendar from './Calendar';
 import Constellations from './Constellations';
 import Notification from './Notification';
-import { saveTasks, loadTasks } from '../utils/storageUtils';
-import { getTodayDate } from '../utils/timeUtils';
+import { saveTasks } from '../utils/storageUtils';
+import { getTodayDate, formatTime } from '../utils/timeUtils';
 import { tasksAPI } from '../services/api';
 import SettingsModal from './SettingsModal';
 import './Dashboard.css';
 
+const API_ERROR_MAP = {
+  'Timer is not running': 'errorTimerNotRunning',
+  'Timer already running': 'errorTimerAlreadyRunning',
+  'Task not found': 'errorTaskNotFound',
+  'Access denied': 'errorAccessDenied',
+  'Could not connect to server': 'errorNetwork',
+  'Task with this name already exists': 'duplicateTaskName',
+};
+
 function Dashboard({ user, onLogout }) {
   const { t, toggleLanguage, language } = useLanguage();
+
+  const tError = (msg) => {
+    const key = Object.keys(API_ERROR_MAP).find(k => msg?.includes(k));
+    return key ? t(API_ERROR_MAP[key]) : (msg || t('errorUnknown'));
+  };
   const headerRef = useRef(null);
   const tasksHeaderRef = useRef(null);
+  const faviconCanvasRef = useRef(null);
   const [tasks, setTasks] = useState([]);
+  const [archivedTasks, setArchivedTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTaskIds, setActiveTaskIds] = useState([]);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showArchiveSection, setShowArchiveSection] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [highlightedTaskId, setHighlightedTaskId] = useState(null);
   const [pulsingTaskIds, setPulsingTaskIds] = useState([]);
   const [notification, setNotification] = useState(null);
@@ -40,22 +58,22 @@ function Dashboard({ user, onLogout }) {
   const fetchTasks = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await tasksAPI.getTasks();
+      const response = await tasksAPI.getTasks(true);
       if (response.success) {
-        setTasks(response.data);
-        const active = response.data.filter(t => t.isActive).map(t => t.id);
-        setActiveTaskIds(active);
+        const active = response.data.filter(t => !t.isArchived);
+        const archived = response.data.filter(t => t.isArchived);
+        setTasks(active);
+        setArchivedTasks(archived);
+        setActiveTaskIds(active.filter(t => t.isActive).map(t => t.id));
       }
     } catch (error) {
-      setNotification(error.message);
+      setNotification(tError(error.message));
     } finally {
       setLoading(false);
     }
   }, []);
 
   const handleSyncEvent = useCallback((event) => {
-    console.log('Sync event received:', event);
-    
     if (event.type === 'CONNECTED') {
       setSyncStatus('connected');
       fetchTasks();
@@ -91,9 +109,21 @@ function Dashboard({ user, onLogout }) {
       
       case 'TASK_DELETED':
         setTasks(prev => prev.filter(t => t.id !== data.id));
+        setArchivedTasks(prev => prev.filter(t => t.id !== data.id));
         setActiveTaskIds(prev => prev.filter(id => id !== data.id));
         break;
-      
+
+      case 'TASK_ARCHIVED':
+        setTasks(prev => prev.filter(t => t.id !== data.id));
+        setArchivedTasks(prev => prev.some(t => t.id === data.id) ? prev : [data, ...prev]);
+        setActiveTaskIds(prev => prev.filter(id => id !== data.id));
+        break;
+
+      case 'TASK_RESTORED':
+        setArchivedTasks(prev => prev.filter(t => t.id !== data.id));
+        setTasks(prev => prev.some(t => t.id === data.id) ? prev : [...prev, data].sort((a, b) => a.orderIndex - b.orderIndex));
+        break;
+
       default:
         break;
     }
@@ -105,63 +135,44 @@ function Dashboard({ user, onLogout }) {
     fetchTasks();
   }, [fetchTasks]);
 
-  const updateFavicon = useCallback((activeTasks, isPulsingBall = false) => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 64;
-    canvas.height = 64;
-    const ctx = canvas.getContext('2d');
-    
-    ctx.clearRect(0, 0, 64, 64);
-    
-    if (activeTasks.length === 0 && !isPulsingBall) {
-      // 1. Стандартная иконка (без задач)
-      ctx.fillStyle = '#0a0e27';
-      ctx.fillRect(8, 8, 48, 48); // Небольшой темный фон внутри кольца
-      ctx.strokeStyle = '#00f5ff';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.arc(32, 32, 28, 0, Math.PI * 2);
-      ctx.stroke();
-    } else {
-      // Цвет фона - цвет первой задачи в списке
-      const bgColor = activeTasks.length > 0 ? activeTasks[0].color : '#00f5ff';
-      
-      // 2. Отрисовываем цветной фон
-      ctx.fillStyle = bgColor;
-      ctx.beginPath();
-      ctx.arc(32, 32, 32, 0, Math.PI * 2);
-      ctx.fill();
-      
-      if (isPulsingBall) {
-        // 3. Режим алертов: пульсирующий черный шар
-        const innerRadius = isPulsingBall ? 20 : 25; // Здесь isPulsingBall - это флаг, мы можем менять радиус в интервале
-        // На самом деле, для простоты будем использовать константу или переданный флаг
-        const r = 24 + Math.sin(Date.now() / 150) * 4; // Плавная анимация если бы мы вызывали чаще, но у нас setInterval.
-        // Используем фиксированные шаги из setInterval
-        const pulseR = 22; 
-        
-        const gradient = ctx.createRadialGradient(32, 32, 2, 32, 32, pulseR);
-        gradient.addColorStop(0, '#1a1f35');
-        gradient.addColorStop(1, '#050811');
-        
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(32, 32, pulseR, 0, Math.PI * 2);
-        ctx.fill();
-      } else {
-        // 4. Режим работы: число задач
-        ctx.fillStyle = '#050811'; // Темный цвет приложения
-        ctx.font = 'bold 44px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(activeTasks.length.toString(), 32, 35);
-      }
+  const drawFavicon = useCallback((innerR, glowPhase = 0) => {
+    if (!faviconCanvasRef.current) {
+      faviconCanvasRef.current = document.createElement('canvas');
+      faviconCanvasRef.current.width = 64;
+      faviconCanvasRef.current.height = 64;
     }
-    
-    const link = document.querySelector('link[rel="icon"]') || document.createElement('link');
-    link.rel = 'icon';
+    const canvas = faviconCanvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, 64, 64);
+
+    // Glow halo: transitions cyan→magenta matching login screen's `pulse` animation.
+    // glowPhase 0 = cyan peak, 1 = magenta peak.
+    const gr = Math.round(255 * glowPhase);
+    const gg = Math.round(245 * (1 - glowPhase));
+    ctx.fillStyle = `rgba(${gr}, ${gg}, 255, 0.25)`;
+    ctx.beginPath();
+    ctx.arc(32, 32, 32, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Outer cyan circle (fixed)
+    ctx.fillStyle = '#00f5ff';
+    ctx.beginPath();
+    ctx.arc(32, 32, 30, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Inner dark circle — never fills completely, controls ring thickness
+    ctx.fillStyle = '#0a0e27';
+    ctx.beginPath();
+    ctx.arc(32, 32, innerR, 0, Math.PI * 2);
+    ctx.fill();
+
+    let link = document.querySelector('link[rel="icon"]');
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
     link.href = canvas.toDataURL();
-    document.head.appendChild(link);
   }, []);
 
   const updateTitle = useCallback((activeTasks, pulsingTasks = []) => {
@@ -170,50 +181,69 @@ function Dashboard({ user, onLogout }) {
     } else if (activeTasks.length === 0) {
       document.title = 'SphereTimer';
     } else {
-      const names = activeTasks.map(t => t.name).join(' • ');
-      document.title = names;
+      document.title = `${activeTasks.length} | ${activeTasks.map(t => t.name).join(' • ')}`;
     }
   }, []);
 
-  const activeTasks = useMemo(() => 
-    tasks.filter(t => activeTaskIds.includes(t.id)), 
+  const activeTasks = useMemo(() =>
+    tasks.filter(t => activeTaskIds.includes(t.id)),
     [tasks, activeTaskIds]
   );
 
+  const pulsingTasks = useMemo(() =>
+    tasks.filter(t => pulsingTaskIds.includes(t.id)),
+    [tasks, pulsingTaskIds]
+  );
+
+  const filteredTasks = useMemo(() =>
+    searchQuery.trim()
+      ? tasks.filter(task => task.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      : tasks,
+    [tasks, searchQuery]
+  );
+
   useEffect(() => {
-    const isRedAlert = pulsingTaskIds.length > 0;
-    const pulsingTasks = tasks.filter(t => pulsingTaskIds.includes(t.id));
-    
-    updateFavicon(activeTasks);
-    updateTitle(activeTasks);
-    
-    // Пульсация favicon для активных задач или алертов
-    let pulseInterval;
-    if (activeTasks.length > 0 || isRedAlert) {
-      let isPulseOn = false;
-      pulseInterval = setInterval(() => {
-        isPulseOn = !isPulseOn;
-        if (isRedAlert && pulsingTasks.length > 0) {
-          // Специальная пульсация для стопа: черный шар на цветном фоне
-          updateFavicon(pulsingTasks, isPulseOn);
-          if (isPulseOn) {
-            updateTitle([], pulsingTasks);
-          } else {
-            updateTitle(activeTasks);
-          }
-        } else {
-          // Обычный режим: просто обновляем, если нужно мигать иконкой (например)
-          // Но по условию нам нужно просто число, которое не мигает, или мигает?
-          // "число запущеных задач отражается вместо фавикона"
-          updateFavicon(activeTasks, false);
+    if (pulsingTaskIds.length === 0) updateTitle(activeTasks);
+  }, [activeTasks, pulsingTaskIds, updateTitle]);
+
+  useEffect(() => {
+    // Idle: static logo — innerR=18, no glow
+    drawFavicon(18, 0);
+
+    if (pulsingTasks.length > 0) {
+      // Alert: fast pulse (0.7s period), wide ring swing for urgency
+      let t = 0;
+      let titleOn = true;
+      const interval = setInterval(() => {
+        t += 60;
+        const cos = Math.cos(2 * Math.PI * t / 700);
+        // innerR swings 8 (thick) ↔ 22 (thin), never fully fills
+        drawFavicon(Math.round(15 + 7 * cos), (1 - cos) / 2);
+        const newTitleOn = cos > 0;
+        if (newTitleOn !== titleOn) {
+          titleOn = newTitleOn;
+          if (titleOn) updateTitle([], pulsingTasks);
+          else updateTitle(activeTasks);
         }
-      }, isRedAlert ? 700 : 3000);
+      }, 60);
+      return () => clearInterval(interval);
     }
-    
-    return () => {
-      if (pulseInterval) clearInterval(pulseInterval);
-    };
-  }, [activeTasks, pulsingTaskIds, tasks, updateFavicon, updateTitle]);
+
+    if (activeTasks.length > 0) {
+      // Active: slow breath matching login's innerPulse (3s period).
+      // Cosine starts at 1 → begins at rest position (thin ring).
+      // innerR: 18 (thin ring, rest) → 10 (thick ring, exhale) → 18
+      let t = 0;
+      const interval = setInterval(() => {
+        t += 60;
+        const cos = Math.cos(2 * Math.PI * t / 3000);
+        const innerR = Math.round(14 + 4 * cos);       // 10 – 18
+        const glowPhase = (1 - cos) / 2;              // 0 (cyan) → 1 (magenta)
+        drawFavicon(innerR, glowPhase);
+      }, 60);
+      return () => clearInterval(interval);
+    }
+  }, [activeTasks, pulsingTasks, drawFavicon, updateTitle]);
 
   // Update CSS variables with the header and subheader heights so main padding is correct on mobile when they wrap
   useEffect(() => {
@@ -260,7 +290,7 @@ function Dashboard({ user, onLogout }) {
         setShowTaskForm(false);
       }
     } catch (error) {
-      setNotification(error.message);
+      setNotification(tError(error.message));
     }
   };
 
@@ -281,7 +311,38 @@ function Dashboard({ user, onLogout }) {
         setTasks(prev => prev.filter(task => task.id !== taskId));
       }
     } catch (error) {
-      setNotification(error.message);
+      setNotification(tError(error.message));
+    }
+  };
+
+  const archiveTask = async (taskId) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    setTasks(prev => prev.filter(t => t.id !== taskId));
+    setArchivedTasks(prev => prev.some(t => t.id === taskId) ? prev : [{ ...task, isArchived: true }, ...prev]);
+    setActiveTaskIds(prev => prev.filter(id => id !== taskId));
+    try {
+      await tasksAPI.archiveTask(taskId);
+    } catch (error) {
+      setNotification(tError(error.message));
+      fetchTasks();
+    }
+  };
+
+  const restoreTask = async (taskId) => {
+    setArchivedTasks(prev => prev.filter(t => t.id !== taskId));
+    try {
+      const response = await tasksAPI.restoreTask(taskId);
+      if (response.success) {
+        setTasks(prev =>
+          prev.some(t => t.id === taskId)
+            ? prev
+            : [...prev, response.data].sort((a, b) => a.orderIndex - b.orderIndex)
+        );
+      }
+    } catch (error) {
+      setNotification(tError(error.message));
+      fetchTasks();
     }
   };
 
@@ -294,7 +355,7 @@ function Dashboard({ user, onLogout }) {
         ));
       }
     } catch (error) {
-      setNotification(error.message);
+      setNotification(tError(error.message));
     }
   };
 
@@ -311,49 +372,55 @@ function Dashboard({ user, onLogout }) {
 
       const now = Date.now();
       const sessionTime = now - task.startTime;
-      
+
+      // Split session across calendar days
+      const splitEntries = [];
+      const startMs = task.startTime;
+      let dayStart = new Date(startMs);
+      dayStart.setHours(0, 0, 0, 0);
+      while (dayStart.getTime() < now) {
+        const dayStartMs = dayStart.getTime();
+        const dayEndMs = dayStartMs + 86400000;
+        const ovStart = Math.max(startMs, dayStartMs);
+        const ovEnd = Math.min(now, dayEndMs);
+        if (ovEnd > ovStart) {
+          const y = dayStart.getFullYear();
+          const m = String(dayStart.getMonth() + 1).padStart(2, '0');
+          const d = String(dayStart.getDate()).padStart(2, '0');
+          splitEntries.push({ date: `${y}-${m}-${d}`, time: ovEnd - ovStart, timestamp: now });
+        }
+        dayStart = new Date(dayEndMs);
+      }
+
       const optimisticUpdate = {
         ...task,
         totalTime: task.totalTime + sessionTime,
-        history: [
-          ...task.history,
-          {
-            date: getTodayDate(),
-            time: sessionTime,
-            timestamp: now,
-          }
-        ],
+        history: [...task.history, ...splitEntries],
         startTime: null,
         isActive: false
       };
-      
-      // Оптимистичное обновление UI
+
       setTasks(prev => prev.map(t => t.id === taskId ? optimisticUpdate : t));
       setActiveTaskIds(prev => prev.filter(id => id !== taskId));
-      
-      // Сохраняем в localStorage для надежности (делаем это с новыми задачами)
+
       setTasks(currentTasks => {
         const nextTasks = currentTasks.map(t => t.id === taskId ? optimisticUpdate : t);
         saveTasks(user?.username || 'default', nextTasks);
         return nextTasks;
       });
 
-      // Отправка на бэкенд
       try {
         const response = await tasksAPI.stopTimer(taskId);
         if (response.success) {
-          // Обновляем задачу точными данными с бэкенда
           setTasks(prev => prev.map(t => t.id === taskId ? response.data : t));
         }
       } catch (error) {
-        setNotification(error.message);
+        setNotification(tError(error.message));
       }
     } else {
-      // Запустить таймер
       const now = Date.now();
-      
-      // Оптимистичное обновление UI
-      setTasks(prev => prev.map(t => 
+
+      setTasks(prev => prev.map(t =>
         t.id === taskId ? { ...t, startTime: now, isActive: true } : t
       ));
       setActiveTaskIds(prev => [...prev, taskId]);
@@ -363,25 +430,23 @@ function Dashboard({ user, onLogout }) {
         return currentTasks;
       });
 
-      // Отправка на бэкенд
       try {
         const response = await tasksAPI.startTimer(taskId);
         if (response.success) {
-          // Обновляем задачу точными данными с бэкенда
           setTasks(prev => prev.map(t => t.id === taskId ? response.data : t));
         }
       } catch (error) {
-        setNotification(error.message);
+        setNotification(tError(error.message));
       }
     }
   };
 
   const setTaskPulsing = (taskId, isPulsing) => {
-    if (isPulsing) {
-      setPulsingTaskIds(prev => prev.includes(taskId) ? prev : [...prev, taskId]);
-    } else {
-      setPulsingTaskIds(prev => prev.filter(id => id !== taskId));
-    }
+    setPulsingTaskIds(prev =>
+      isPulsing
+        ? prev.includes(taskId) ? prev : [...prev, taskId]
+        : prev.filter(id => id !== taskId)
+    );
   };
 
   return (
@@ -390,14 +455,9 @@ function Dashboard({ user, onLogout }) {
         <div className="header-inner">
           <div className="header-left">
             <h1 className="dashboard-title">SphereTimer</h1>
-            {/* <div className="user-badge">
-              <div className="user-avatar">{user.username[0].toUpperCase()}</div>
-              <span className="username">{user.username}</span>
-            </div> */}
           </div>
           <div className="header-center">
-            {/* <h1 className="dashboard-title">SphereTimer</h1> */}
-            <div 
+            <div
               className="user-badge" 
               onClick={() => setShowSettings(true)}
               style={{ cursor: 'pointer' }}
@@ -448,31 +508,92 @@ function Dashboard({ user, onLogout }) {
           </div>
 
           {showTaskForm && (
-            <TaskForm 
+            <TaskForm
               onSubmit={createTask}
               onCancel={() => setShowTaskForm(false)}
+              existingNames={tasks.map(t => t.name)}
             />
           )}
 
+          <div className="task-search-wrapper">
+            <input
+              type="text"
+              className="task-search-input"
+              placeholder={t('searchPlaceholder')}
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button className="task-search-clear" onClick={() => setSearchQuery('')}>×</button>
+            )}
+          </div>
+
           <div className="tasks-scroll">
             <TaskList
-              tasks={tasks}
+              tasks={filteredTasks}
               activeTaskIds={activeTaskIds}
               pulsingTaskIds={pulsingTaskIds}
               highlightedTaskId={highlightedTaskId}
               onToggleTimer={toggleTimer}
               onDelete={deleteTask}
               onUpdate={updateTask}
+              onArchive={archiveTask}
               onReorder={setTasks}
               onSetPulsing={setTaskPulsing}
+              existingNames={tasks.map(t => t.name)}
             />
+            {searchQuery.trim() && filteredTasks.length === 0 && (
+              <div className="search-empty-state">{t('noSearchResults')}</div>
+            )}
+
+            {archivedTasks.length > 0 && (
+              <div className="archive-section">
+                <button
+                  className="archive-section-toggle"
+                  onClick={() => setShowArchiveSection(s => !s)}
+                >
+                  <span>{t('archiveSection')} ({archivedTasks.length})</span>
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                    style={{ transform: showArchiveSection ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+
+                {showArchiveSection && (
+                  <div className="archived-tasks-list">
+                    {archivedTasks.map(task => (
+                      <div key={task.id} className="archived-task-item" style={{ borderLeftColor: task.color }}>
+                        <div className="archived-task-dot" style={{ backgroundColor: task.color }} />
+                        <div className="archived-task-name">{task.name}</div>
+                        <div className="archived-task-time">{formatTime(task.totalTime)}</div>
+                        <button
+                          className="restore-button"
+                          onClick={() => restoreTask(task.id)}
+                          title={t('restore')}
+                        >
+                          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="1 4 1 10 7 10"/>
+                            <path d="M3.51 15a9 9 0 1 0 .49-3.45"/>
+                          </svg>
+                        </button>
+                        <button
+                          className="delete-button"
+                          onClick={() => deleteTask(task.id)}
+                          title={t('delete')}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
         {!isMobile && (
           <div className="constellations-container">
-            <Constellations 
-              activeTasks={tasks.filter(t => activeTaskIds.includes(t.id))}
+            <Constellations
+              activeTasks={activeTasks}
               onTaskClick={(task) => scrollToTask(task.id)}
             />
           </div>
@@ -482,8 +603,9 @@ function Dashboard({ user, onLogout }) {
       {showCalendar && (
         <div className="calendar-overlay" onClick={() => setShowCalendar(false)}>
           <div onClick={(e) => e.stopPropagation()}>
-            <Calendar 
-              tasks={tasks} 
+            <Calendar
+              tasks={tasks}
+              archivedTasks={archivedTasks}
               onClose={() => setShowCalendar(false)}
             />
           </div>

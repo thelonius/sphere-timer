@@ -3,7 +3,7 @@ import TaskItem from './TaskItem';
 import { useLanguage } from '../context/useLanguage';
 import './TaskList.css';
 
-function TaskList({ tasks, activeTaskIds, pulsingTaskIds, highlightedTaskId, onToggleTimer, onDelete, onUpdate, onReorder, onSetPulsing }) {
+function TaskList({ tasks, activeTaskIds, pulsingTaskIds, highlightedTaskId, onToggleTimer, onDelete, onUpdate, onArchive, onReorder, onSetPulsing, existingNames }) {
   const { t } = useLanguage();
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [draggedIndex, setDraggedIndex] = useState(null);
@@ -61,7 +61,9 @@ function TaskList({ tasks, activeTaskIds, pulsingTaskIds, highlightedTaskId, onT
           onToggleTimer={() => onToggleTimer(task.id)}
           onDelete={() => onDelete(task.id)}
           onUpdate={(updates) => onUpdate(task.id, updates)}
+          onArchive={onArchive ? () => onArchive(task.id) : undefined}
           onSetPulsing={(isPulsing) => onSetPulsing(task.id, isPulsing)}
+          existingNames={existingNames}
           draggable
           onDragStart={(e) => handleDragStart(e, index)}
           onDragOver={(e) => handleDragOver(e, index)}

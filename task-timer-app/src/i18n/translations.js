@@ -2,7 +2,7 @@ export const translations = {
   ru: {
     // Login & Register
     appTitle: 'SphereTimer',
-    appSubtitle: 'Трекинг времени будущего',
+    appSubtitle: 'Трекинг времени',
     createAccount: 'Создайте аккаунт',
     username: 'Имя пользователя',
     email: 'Email',
@@ -39,6 +39,35 @@ export const translations = {
     backToLogin: 'Вернуться ко входу',
     allFieldsRequired: 'Все поля обязательны для заполнения',
     
+    // Archive
+    archive: 'Архивировать',
+    restore: 'Восстановить',
+    archiveSection: 'Архив',
+    archiveEmpty: 'Архив пуст',
+    archiveHint: 'Задача скрыта из списка, но история сохранена',
+
+    // Search
+    searchPlaceholder: 'Поиск задач...',
+    noSearchResults: 'Задач не найдено',
+
+    // Date filter
+    dateFrom: 'С',
+    dateTo: 'По',
+    clearFilter: 'Сбросить',
+    datePlaceholder: 'ДД.ММ.ГГГГ',
+    today: 'Сегодня',
+
+    // Task validation
+    duplicateTaskName: 'Задача с таким названием уже существует',
+
+    // API / backend errors
+    errorTimerNotRunning: 'Таймер не запущен',
+    errorTimerAlreadyRunning: 'Таймер уже запущен',
+    errorTaskNotFound: 'Задача не найдена',
+    errorAccessDenied: 'Доступ запрещён',
+    errorNetwork: 'Нет соединения с сервером. Проверьте сеть.',
+    errorUnknown: 'Произошла ошибка. Попробуйте ещё раз.',
+
     // Dashboard
     myTasks: 'Мои задачи',
     addTask: 'Добавить задачу',
@@ -242,6 +271,35 @@ export const translations = {
     backToLogin: 'Back to login',
     allFieldsRequired: 'All fields are required',
     
+    // Archive
+    archive: 'Archive',
+    restore: 'Restore',
+    archiveSection: 'Archive',
+    archiveEmpty: 'Archive is empty',
+    archiveHint: 'Task is hidden from the list, but history is preserved',
+
+    // Search
+    searchPlaceholder: 'Search tasks...',
+    noSearchResults: 'No tasks found',
+
+    // Date filter
+    dateFrom: 'From',
+    dateTo: 'To',
+    clearFilter: 'Clear',
+    datePlaceholder: 'DD.MM.YYYY',
+    today: 'Today',
+
+    // Task validation
+    duplicateTaskName: 'A task with this name already exists',
+
+    // API / backend errors
+    errorTimerNotRunning: 'Timer is not running',
+    errorTimerAlreadyRunning: 'Timer is already running',
+    errorTaskNotFound: 'Task not found',
+    errorAccessDenied: 'Access denied',
+    errorNetwork: 'Could not connect to server. Check your network.',
+    errorUnknown: 'An error occurred. Please try again.',
+
     // Dashboard
     myTasks: 'My Tasks',
     addTask: 'Add Task',

@@ -14,16 +14,21 @@ const PRESET_COLORS = [
   '#FF4757',   // Красные гиганты - Бетельгейзе
 ];
 
-function TaskForm({ onSubmit, onCancel, initialData = null }) {
+function TaskForm({ onSubmit, onCancel, initialData = null, existingNames = [] }) {
   const { t } = useLanguage();
   const [name, setName] = useState(initialData?.name || '');
   const [color, setColor] = useState(initialData?.color || PRESET_COLORS[0]);
+  const [error, setError] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (name.trim()) {
-      onSubmit({ name: name.trim(), color });
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    if (existingNames.some(n => n.toLowerCase() === trimmed.toLowerCase())) {
+      setError(t('duplicateTaskName'));
+      return;
     }
+    onSubmit({ name: trimmed, color });
   };
 
   return (
@@ -36,12 +41,13 @@ function TaskForm({ onSubmit, onCancel, initialData = null }) {
             <label>{t('taskName')}</label>
             <textarea
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { setName(e.target.value); setError(''); }}
               placeholder={t('enterTaskName')}
-              className="task-input task-textarea"
+              className={`task-input task-textarea${error ? ' input-error' : ''}`}
               autoFocus
               rows={3}
             />
+            {error && <span className="form-error">{error}</span>}
           </div>
 
           <div className="form-group">

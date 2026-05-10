@@ -137,10 +137,9 @@ export const authAPI = {
 // API методы для задач
 export const tasksAPI = {
   // Получить все задачи пользователя
-  getTasks: async () => {
-    return fetchWithAuth('/tasks', {
-      method: 'GET',
-    });
+  getTasks: async (includeArchived = false) => {
+    const url = includeArchived ? '/tasks?include_archived=true' : '/tasks';
+    return fetchWithAuth(url, { method: 'GET' });
   },
 
   // Создать задачу
@@ -178,6 +177,16 @@ export const tasksAPI = {
     return fetchWithAuth(`/tasks/${taskId}/stop`, {
       method: 'POST',
     });
+  },
+
+  // Архивировать задачу
+  archiveTask: async (taskId) => {
+    return fetchWithAuth(`/tasks/${taskId}/archive`, { method: 'POST' });
+  },
+
+  // Восстановить задачу из архива
+  restoreTask: async (taskId) => {
+    return fetchWithAuth(`/tasks/${taskId}/restore`, { method: 'POST' });
   },
 
   // Получить статистику
