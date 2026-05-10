@@ -5,21 +5,23 @@ import TaskForm from './TaskForm';
 import { formatTime, formatDate, getTodayDate } from '../utils/timeUtils';
 import './TaskItem.css';
 
-function TaskItem({ 
-  task, 
-  isActive, 
-  isPulsing, 
-  isHighlighted, 
-  currentTime, 
-  onToggleTimer, 
-  onDelete, 
-  onUpdate, 
+function TaskItem({
+  task,
+  isActive,
+  isPulsing,
+  isHighlighted,
+  currentTime,
+  onToggleTimer,
+  onDelete,
+  onUpdate,
+  onArchive,
   onSetPulsing,
-  draggable, 
-  onDragStart, 
-  onDragOver, 
-  onDragEnd, 
-  isDragging 
+  draggable,
+  onDragStart,
+  onDragOver,
+  onDragEnd,
+  isDragging,
+  existingNames = [],
 }) {
   const { t } = useLanguage();
   const [showEditForm, setShowEditForm] = useState(false);
@@ -56,7 +58,7 @@ function TaskItem({
   };
 
   // Текущая сессия
-  const currentSessionTime = isActive ? currentTime - task.startTime : 0;
+  const currentSessionTime = isActive ? Math.max(0, currentTime - task.startTime) : 0;
 
   useEffect(() => {
     if (scheduledStopAt && currentTime >= scheduledStopAt) {
@@ -243,6 +245,19 @@ function TaskItem({
             ✎
           </button>
           
+          {onArchive && (
+            <button
+              className="archive-button"
+              onClick={(e) => { e.stopPropagation(); onArchive(); }}
+              title={t('archive')}
+            >
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="21 8 21 21 3 21 3 8"/>
+                <rect x="1" y="3" width="22" height="5"/>
+                <line x1="10" y1="12" x2="14" y2="12"/>
+              </svg>
+            </button>
+          )}
           <button
             className="delete-button"
             onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true); }}
@@ -257,6 +272,7 @@ function TaskItem({
           initialData={task}
           onSubmit={handleUpdate}
           onCancel={() => setShowEditForm(false)}
+          existingNames={existingNames.filter(n => n !== task.name)}
         />
       )}
 

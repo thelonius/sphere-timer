@@ -72,7 +72,7 @@ function SettingsModal({ user, onClose }) {
             <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{user?.email}</div>
           </div>
 
-          <form onSubmit={handleSubmit} className="task-form">
+          <form onSubmit={handleSubmit} className="task-form" autoComplete="off">
             <h3 style={{ marginBottom: '15px' }}>{t('changePassword')}</h3>
             
             <div className="form-group">
@@ -82,8 +82,11 @@ function SettingsModal({ user, onClose }) {
                 name="currentPassword"
                 value={formData.currentPassword}
                 onChange={handleChange}
-                placeholder="••••••••"
+                placeholder=""
                 className="task-input"
+                autoComplete="current-password"
+                readOnly
+                onFocus={e => e.target.removeAttribute('readOnly')}
                 disabled={loading}
               />
             </div>
@@ -95,8 +98,11 @@ function SettingsModal({ user, onClose }) {
                 name="newPassword"
                 value={formData.newPassword}
                 onChange={handleChange}
-                placeholder="••••••••"
+                placeholder=""
                 className="task-input"
+                autoComplete="new-password"
+                readOnly
+                onFocus={e => e.target.removeAttribute('readOnly')}
                 disabled={loading}
               />
             </div>
@@ -108,8 +114,11 @@ function SettingsModal({ user, onClose }) {
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                placeholder="••••••••"
+                placeholder=""
                 className="task-input"
+                autoComplete="new-password"
+                readOnly
+                onFocus={e => e.target.removeAttribute('readOnly')}
                 disabled={loading}
               />
             </div>

@@ -17,8 +17,9 @@ router = APIRouter(prefix="/tasks", tags=["tasks"])
 async def list_tasks(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
+    include_archived: bool = False,
 ):
-    tasks = await task_service.get_tasks(db, current_user)
+    tasks = await task_service.get_tasks(db, current_user, include_archived=include_archived)
     return {"success": True, "data": [_task_out(t) for t in tasks]}
 
 
@@ -84,6 +85,27 @@ async def stop_timer(
     }
 
 
+@router.post("/{task_id}/archive")
+async def archive_task(
+    task_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    redis: Annotated[aioredis.Redis, Depends(get_redis)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    task = await task_service.set_archived(db, redis, task_id, current_user, archived=True)
+    return {"success": True, "data": _task_out(task)}
+
+
+@router.post("/{task_id}/restore")
+async def restore_task(
+    task_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    task = await task_service.set_archived(db, None, task_id, current_user, archived=False)
+    return {"success": True, "data": _task_out(task)}
+
+
 @router.get("/stats")
 async def get_stats(
     db: Annotated[AsyncSession, Depends(get_db)],
@@ -109,6 +131,7 @@ def _task_out(t) -> dict:
         "color": t.color,
         "totalTime": t.total_time,
         "isActive": t.is_active,
+        "isArchived": t.is_archived,
         "startTime": t.start_time,
         "orderIndex": t.order_index,
         "history": [_history_out(h) for h in (t.history or [])],

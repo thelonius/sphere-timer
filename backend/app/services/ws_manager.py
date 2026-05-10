@@ -14,12 +14,13 @@ class ConnectionManager:
 
     async def connect(self, user_id: int, websocket: WebSocket):
         await websocket.accept()
+        await self.connect_already_accepted(user_id, websocket)
+
+    async def connect_already_accepted(self, user_id: int, websocket: WebSocket):
         if user_id not in self.active_connections:
             self.active_connections[user_id] = set()
-            # Start a Redis listener for this user if not already running
             task = asyncio.create_task(self._redis_listener(user_id))
             self.pubsub_tasks[user_id] = task
-        
         self.active_connections[user_id].add(websocket)
 
     def disconnect(self, user_id: int, websocket: WebSocket):

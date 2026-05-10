@@ -13,6 +13,7 @@ class Task(Base):
     color: Mapped[str] = mapped_column(String(7), nullable=False)           # hex e.g. #FFD700
     total_time: Mapped[int] = mapped_column(BigInteger, default=0)          # milliseconds
     is_active: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    is_archived: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     start_time: Mapped[int | None] = mapped_column(BigInteger, nullable=True)  # epoch ms
     order_index: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

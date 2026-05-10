@@ -149,7 +149,8 @@
 
 .timer-button,
 .edit-button,
-.delete-button {
+.delete-button,
+.archive-button {
   width: 40px;
   height: 40px;
   border-radius: 8px;
@@ -214,6 +215,12 @@
   background: rgba(255, 0, 0, 0.1);
   border-color: #ff4444;
   color: #ff4444;
+}
+
+.archive-button:hover {
+  background: rgba(255, 165, 0, 0.1);
+  border-color: #ffa500;
+  color: #ffa500;
 }
 
 .delete-confirm-overlay {
@@ -470,16 +477,20 @@ input[type=number] {
   right: 10px;
   background: transparent;
   border: none;
+  outline: none;
   color: var(--text-secondary);
   font-size: 1.2rem;
   cursor: pointer;
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   transition: all 0.2s ease;
+  line-height: 1;
 }
 
 .stop-input-close:hover {
@@ -595,7 +606,8 @@ input[type=number] {
 
   .timer-button,
   .edit-button,
-  .delete-button {
+  .delete-button,
+  .archive-button {
     flex: 1;
     height: 54px;
     min-height: 54px;

@@ -24,6 +24,7 @@ def _task_to_dict(t: Task) -> dict:
         "color": t.color,
         "totalTime": t.total_time,
         "isActive": t.is_active,
+        "isArchived": t.is_archived,
         "startTime": t.start_time,
         "orderIndex": t.order_index,
         "history": [{"id": h.id, "date": str(h.date), "time": h.time, "sessions": h.sessions} for h in (t.history or [])],
@@ -32,21 +33,31 @@ def _task_to_dict(t: Task) -> dict:
 
 from sqlalchemy.orm import selectinload
 
-from sqlalchemy.orm import selectinload
 
-async def get_tasks(db: AsyncSession, user: User) -> list[Task]:
-    result = await db.execute(
-        select(Task)
-        .where(Task.user_id == user.id)
-        .order_by(Task.order_index)
-        .options(selectinload(Task.history))
-        .execution_options(populate_existing=True)
-    )
-    tasks = result.scalars().all()
-    return list(tasks)
+def _day_start_ms(d: date) -> int:
+    return int(datetime.combine(d, datetime.min.time()).timestamp() * 1000)
+
+
+async def _check_name_unique(db: AsyncSession, user: User, name: str, exclude_id: int | None = None) -> None:
+    q = select(Task).where(Task.user_id == user.id, func.lower(Task.name) == name.lower().strip())
+    if exclude_id is not None:
+        q = q.where(Task.id != exclude_id)
+    if (await db.execute(q)).scalar_one_or_none():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Task with this name already exists")
+
+
+async def get_tasks(db: AsyncSession, user: User, include_archived: bool = False) -> list[Task]:
+    q = select(Task).where(Task.user_id == user.id)
+    if not include_archived:
+        q = q.where(~Task.is_archived)
+    q = q.order_by(Task.order_index).options(selectinload(Task.history)).execution_options(populate_existing=True)
+    result = await db.execute(q)
+    return list(result.scalars().all())
 
 
 async def create_task(db: AsyncSession, user: User, name: str, color: str) -> Task:
+    await _check_name_unique(db, user, name)
+
     # Determine next order_index
     result = await db.execute(select(func.max(Task.order_index)).where(Task.user_id == user.id))
     max_order = result.scalar() or 0
@@ -79,6 +90,7 @@ async def update_task(
 ) -> Task:
     task = await get_task_or_404(db, task_id, user)
     if name is not None:
+        await _check_name_unique(db, user, name, exclude_id=task_id)
         task.name = name
     if color is not None:
         task.color = color
@@ -88,6 +100,18 @@ async def update_task(
     updated_task = await get_task_or_404(db, task_id, user)
     await broadcast_event(user.id, "TASK_UPDATED", _task_to_dict(updated_task))
     return updated_task
+
+
+async def set_archived(db: AsyncSession, redis: aioredis.Redis | None, task_id: int, user: User, archived: bool) -> Task:
+    task = await get_task_or_404(db, task_id, user)
+    if archived and task.is_active:
+        await _do_stop(db, redis, task)
+    task.is_archived = archived
+    await db.commit()
+    task = await get_task_or_404(db, task_id, user)
+    event = "TASK_ARCHIVED" if archived else "TASK_RESTORED"
+    await broadcast_event(user.id, event, _task_to_dict(task))
+    return task
 
 
 async def delete_task(db: AsyncSession, redis: aioredis.Redis, task_id: int, user: User) -> None:
@@ -117,24 +141,44 @@ async def _do_stop(db: AsyncSession, redis: aioredis.Redis, task: Task) -> int:
     """Core stop logic — returns elapsed ms."""
     start_ms_str = await redis.get(f"timer:{task.id}")
     start_ms = int(start_ms_str) if start_ms_str else (task.start_time or _now_ms())
-    elapsed = max(0, _now_ms() - start_ms)
+    now_ms = _now_ms()
+    elapsed = max(0, now_ms - start_ms)
 
     task.total_time += elapsed
     task.is_active = False
     task.start_time = None
 
-    # Upsert today's history
-    today = date.today()
-    result = await db.execute(
-        select(TaskHistory).where(TaskHistory.task_id == task.id, TaskHistory.date == today)
-    )
-    history_entry = result.scalar_one_or_none()
-    if history_entry:
-        history_entry.time += elapsed
-        history_entry.sessions += 1
-    else:
-        history_entry = TaskHistory(task_id=task.id, date=today, time=elapsed, sessions=1)
-        db.add(history_entry)
+    # Split session across calendar days it spans
+    start_dt = datetime.fromtimestamp(start_ms / 1000).date()
+    end_dt = date.today()
+    current_date = start_dt
+    while current_date <= end_dt:
+        d_start_ms = _day_start_ms(current_date)
+        d_end_ms = d_start_ms + 86400000
+
+        ov_start = max(start_ms, d_start_ms)
+        ov_end = min(now_ms, d_end_ms)
+
+        if ov_end > ov_start:
+            day_ms = ov_end - ov_start
+            result = await db.execute(
+                select(TaskHistory).where(TaskHistory.task_id == task.id, TaskHistory.date == current_date)
+            )
+            history_entry = result.scalar_one_or_none()
+            if history_entry:
+                history_entry.time += day_ms
+                if current_date == end_dt:
+                    history_entry.sessions += 1
+            else:
+                history_entry = TaskHistory(
+                    task_id=task.id,
+                    date=current_date,
+                    time=day_ms,
+                    sessions=1 if current_date == end_dt else 0,
+                )
+                db.add(history_entry)
+
+        current_date += timedelta(days=1)
 
     await redis.delete(f"timer:{task.id}")
     return elapsed
@@ -213,31 +257,25 @@ async def get_stats(
             # Distribute time across days
             s_start_dt = datetime.fromtimestamp(t.start_time / 1000).date()
             t_dt = date.today()
-            
-            c_d = s_start_dt
-            while c_d <= t_dt:
-                # Check if this day is within requested range
-                in_range = True
-                if start_date is not None and c_d < start_date:
-                    in_range = False
-                if end_date is not None and c_d > end_date:
-                    in_range = False
-                
+
+            current_date = s_start_dt
+            while current_date <= t_dt:
+                in_range = (
+                    (start_date is None or current_date >= start_date) and
+                    (end_date is None or current_date <= end_date)
+                )
                 if in_range:
-                    d_start_ms = int(datetime.combine(c_d, datetime.min.time()).replace(tzinfo=None).timestamp() * 1000)
-                    d_end_ms = d_start_ms + 86400000 # 24 * 60 * 60 * 1000
-                    
+                    d_start_ms = _day_start_ms(current_date)
+                    d_end_ms = d_start_ms + 86400000
                     ov_start = max(t.start_time, d_start_ms)
                     ov_end = min(n_ms, d_end_ms)
-                    
                     if ov_end > ov_start:
-                        if c_d not in daily:
-                            daily[c_d] = {"date": c_d, "time": 0, "sessions": 0}
-                        daily[c_d]["time"] += (ov_end - ov_start)
-                        if c_d == t_dt:
-                            daily[c_d]["sessions"] += 1
-                
-                c_d = c_d + timedelta(days=1)
+                        if current_date not in daily:
+                            daily[current_date] = {"date": current_date, "time": 0, "sessions": 0}
+                        daily[current_date]["time"] += ov_end - ov_start
+                        if current_date == t_dt:
+                            daily[current_date]["sessions"] += 1
+                current_date += timedelta(days=1)
 
     return {
         "total_time": total_time,
